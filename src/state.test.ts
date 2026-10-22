@@ -1,0 +1,54 @@
+import { expect, it } from "vitest";
+import { initialState, reducer } from "./state";
+it("loads a nonempty text paused at the first word", () => {
+  const input = reducer(initialState, { type: "draft", text: "Hallo Welt!" });
+  const session = reducer(input, { type: "load" });
+  expect(session.view).toBe("reader");
+  expect(session.words.map((w) => w.text)).toEqual(["Hallo", "Welt!"]);
+  expect(session.index).toBe(0);
+  expect(session.playing).toBe(false);
+});
+const loaded = () =>
+  reducer({ ...initialState, draft: "Eins zwei Ende!" }, { type: "load" });
+it("pauses at the current position when switching to normal text", () => {
+  let s = reducer(loaded(), { type: "toggle" });
+  s = reducer(s, { type: "tick" });
+  s = reducer(s, { type: "text" });
+  expect([s.view, s.index, s.playing, s.selected]).toEqual([
+    "text",
+    1,
+    false,
+    1,
+  ]);
+  s = reducer(s, { type: "resume", index: 2 });
+  expect([s.view, s.index, s.playing, s.complete]).toEqual([
+    "reader",
+    2,
+    false,
+    false,
+  ]);
+});
+it("completes only after the last word duration and restarts paused", () => {
+  let s = reducer(loaded(), { type: "toggle" });
+  s = reducer(reducer(s, { type: "tick" }), { type: "tick" });
+  expect([s.index, s.complete, s.playing]).toEqual([2, false, true]);
+  s = reducer(s, { type: "tick" });
+  expect([s.index, s.complete, s.playing]).toEqual([2, true, false]);
+  s = reducer(s, { type: "restart" });
+  expect([s.index, s.complete, s.playing]).toEqual([0, false, false]);
+});
+it("can end early without losing the text or speed", () => {
+  let s = reducer(loaded(), { type: "speed", wpm: 600 });
+  s = reducer(reducer(s, { type: "toggle" }), { type: "finish" });
+  expect([s.view, s.playing, s.draft, s.wpm]).toEqual([
+    "input",
+    false,
+    "Eins zwei Ende!",
+    600,
+  ]);
+});
+it("ignores invalid resumes, empty loads and paused ticks", () => {
+  expect(reducer(initialState, { type: "load" })).toEqual(initialState);
+  expect(reducer(loaded(), { type: "tick" })).toEqual(loaded());
+  expect(reducer(loaded(), { type: "resume", index: -1 })).toEqual(loaded());
+});
