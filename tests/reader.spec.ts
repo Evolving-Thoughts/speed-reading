@@ -72,7 +72,8 @@ test("gives a sentence-ending word triple duration and completes after it, then 
   page,
 }, info) => {
   await load(page, "Hallo Welt!");
-  await page.clock.install();
+  await page.clock.install({ time: new Date("2026-01-01T00:00:00Z") });
+  await page.clock.pauseAt(new Date("2026-01-01T00:01:00Z"));
   await page.getByRole("button", { name: "Start", exact: true }).click();
   await page.clock.runFor(210);
   await expect(word(page)).toHaveAttribute("aria-label", "Welt!");
@@ -220,7 +221,8 @@ test("pause cancels pending advancement and speed changes apply while playing", 
   page,
 }) => {
   await load(page, "Eins zwei drei vier Ende!");
-  await page.clock.install();
+  await page.clock.install({ time: new Date("2026-01-01T00:00:00Z") });
+  await page.clock.pauseAt(new Date("2026-01-01T00:01:00Z"));
   await page.getByRole("button", { name: "Start", exact: true }).click();
   await page.clock.runFor(40);
   await page.getByRole("button", { name: "Pause", exact: true }).click();
@@ -235,4 +237,21 @@ test("pause cancels pending advancement and speed changes apply while playing", 
   await expect(
     page.getByRole("button", { name: "zwei", exact: true }),
   ).toHaveAttribute("aria-current", "location");
+});
+
+test("keeps the input word count consistent while editing and changing speed", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const input = page.getByLabel("Was möchtest du lesen?");
+  await input.fill("Hallo , Welt!");
+  await expect(page.getByText("2 Wörter", { exact: true })).toBeVisible();
+  await page.getByLabel("Lesetempo").fill("600");
+  await expect(page.getByText("2 Wörter", { exact: true })).toBeVisible();
+  await input.fill("Hallo , Welt! Weiter.");
+  await expect(page.getByText("3 Wörter", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Zur Leseansicht" }).click();
+  await expect(
+    page.getByRole("progressbar", { name: "Lesefortschritt" }),
+  ).toHaveAttribute("aria-valuemax", "3");
 });

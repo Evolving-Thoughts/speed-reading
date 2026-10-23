@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { tokenize } from "./reader";
+import { tokenize, countWords } from "./reader";
 describe("text preparation", () => {
   it("keeps sentence punctuation attached and preserves paragraph breaks", () => {
     const words = tokenize("Hallo , Welt!\n\nNoch ein Satz.");
@@ -46,4 +46,23 @@ it("shows sentence ends three times as long, keeping commas at base duration", (
   const words = tokenize("Hallo, Welt!");
   expect(wordDuration(words[0], 300)).toBe(200);
   expect(wordDuration(words[1], 300)).toBe(600);
+});
+
+describe("lightweight word count", () => {
+  it.each([
+    ["", 0],
+    [" \n\t ", 0],
+    ["Hallo , Welt!\n\nNoch ein Satz.", 5],
+    ["… Hallo", 2],
+    ["Hallo , !", 1],
+    ["Cafe\u0301\nweiter 👩‍💻", 3],
+  ])(
+    "counts %j as %i without splitting punctuation into a word",
+    (text, expected) => {
+      expect(countWords(text)).toBe(expected);
+    },
+  );
+  it("counts a long draft", () => {
+    expect(countWords("Hallo Welt! ".repeat(5000))).toBe(10000);
+  });
 });

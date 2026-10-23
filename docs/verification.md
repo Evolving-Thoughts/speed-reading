@@ -33,3 +33,14 @@ Maintainability: logic/state, timing and presentation have separate focused modu
 - Sentence detection is heuristic with a short abbreviation list.
 - CI is configured but its GitHub execution result is not represented by these local checks.
 - No public deployment or merge performed.
+
+## PR review follow-up: input word count
+
+Addressed review comment `discussion_r4357812333` against PR head `13ae8aabcab605690b61bfb6f1bbda7b1655a7f1`:
+
+- The input count uses `countWords`, a lightweight pass over non-whitespace tokens without word objects, normalization, anchor calculation or grapheme segmentation. Standalone punctuation uses the same predicate as full tokenization so the count matches reading steps.
+- `useMemo` caches the count by draft. An unchanged draft is not counted again when speed or another UI state changes. Editing still requires a linear count, but no longer performs full text preparation.
+- Added literal expected-count cases for whitespace, standalone punctuation, Unicode/combining characters and a 10,000-word draft; added desktop/mobile coverage for editing, speed changes and agreement with the loaded session length.
+- The full regression run exposed a pre-existing timing-test race: the installed browser clock still advanced between interactions. Timing tests now explicitly pause the virtual clock before playback and advance it only with `runFor`. Production playback behavior was not changed to satisfy the test.
+- Final checks: 22 unit tests passed; 23 Chromium browser tests passed with the same 1 intentional mobile double-click skip; build/typecheck and formatting passed.
+- Same-agent second-pass review of this follow-up found no unresolved correctness/security/regression blockers. This was not a measured input-latency benchmark; no particular speedup factor is claimed. Original browser/hardware limits above still apply.

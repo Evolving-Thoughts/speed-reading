@@ -4,6 +4,7 @@ export type Word = {
   anchor: number;
   sentenceEnd: boolean;
 };
+const standalonePunctuation = /^\p{P}+$/u;
 const abbreviations = new Set([
   "z.b.",
   "bzw.",
@@ -25,7 +26,7 @@ export function tokenize(text: string): Word[] {
   let end = 0;
   for (const match of text.matchAll(/\S+/gu)) {
     const value = match[0];
-    if (/^\p{P}+$/u.test(value) && words.length) {
+    if (standalonePunctuation.test(value) && words.length) {
       const previous = words[words.length - 1];
       previous.text += value;
       previous.sentenceEnd = endsSentence(previous.text);
@@ -61,4 +62,13 @@ export function wordDuration(word: Word, wpm: number): number {
   return (
     (60000 / Math.max(100, Math.min(1200, wpm))) * (word.sentenceEnd ? 3 : 1)
   );
+}
+
+/** Count reading steps without normalization, grapheme segmentation or word objects. */
+export function countWords(text: string): number {
+  let count = 0;
+  for (const match of text.matchAll(/\S+/gu)) {
+    if (count === 0 || !standalonePunctuation.test(match[0])) count += 1;
+  }
+  return count;
 }

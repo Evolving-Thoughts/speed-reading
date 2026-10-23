@@ -2,13 +2,14 @@ import {
   Fragment,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useReducer,
   useRef,
 } from "react";
 import { initialState, reducer } from "./state";
 import { ReaderWord } from "./ReaderWord";
 import { usePlayback } from "./usePlayback";
-import { tokenize } from "./reader";
+import { countWords } from "./reader";
 
 const example =
   "Manchmal braucht eine gute Idee keinen großen Plan. Es reicht, einen Gedanken festzuhalten und ihm ein Stück zu folgen.\n\nEin kurzer Text, ein ruhiger Moment. Wir lesen weiter und finden heraus, welche Richtung sich daraus ergibt.";
@@ -59,8 +60,8 @@ export default function App() {
       });
   }, [state.view]);
   const words = state.words;
-  const count =
-    state.view === "input" ? tokenize(state.draft).length : words.length;
+  const draftCount = useMemo(() => countWords(state.draft), [state.draft]);
+  const count = state.view === "input" ? draftCount : words.length;
   const progress = words.length
     ? Math.round(((state.index + 1) / words.length) * 100)
     : 0;
