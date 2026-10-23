@@ -57,7 +57,7 @@ it("defaults to normal font size and triple sentence duration", () => {
   expect(initialState.fontScale).toBe(1);
   expect(initialState.sentenceEndFactor).toBe(3);
 });
-it("keeps reading preferences across exit, reload and restart within the session", () => {
+it("keeps reading preferences across exit, load and restart within the session", () => {
   let s = reducer(loaded(), { type: "fontScale", value: 1.25 });
   s = reducer(s, { type: "sentenceEndFactor", value: 2 });
   s = reducer(s, { type: "finish" });
