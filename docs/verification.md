@@ -44,3 +44,15 @@ Addressed review comment `discussion_r4357812333` against PR head `13ae8aabcab60
 - The full regression run exposed a pre-existing timing-test race: the installed browser clock still advanced between interactions. Timing tests now explicitly pause the virtual clock before playback and advance it only with `runFor`. Production playback behavior was not changed to satisfy the test.
 - Final checks: 22 unit tests passed; 23 Chromium browser tests passed with the same 1 intentional mobile double-click skip; build/typecheck and formatting passed.
 - Same-agent second-pass review of this follow-up found no unresolved correctness/security/regression blockers. This was not a measured input-latency benchmark; no particular speedup factor is claimed. Original browser/hardware limits above still apply.
+
+## PR review follow-up: word-selection tab stops
+
+Addressed the previously missed, non-blocking issue in review `pullrequestreview-5626463706`, based on head `e3bbb252868d24ddf9574e260fe3d45682828645`.
+
+- Extracted a memoized `NormalText` component. Click, double-click and keyboard handling are delegated to the text container, with no per-word event-handler closures.
+- Exactly one word has `tabIndex=0`; all other word buttons have `tabIndex=-1`. Clicking/tapping a word moves the active tab stop. Native button semantics and Enter/Space activation remain available.
+- Left/right arrows move selection/focus, Home/End select the first/last word, and navigation stops at the boundaries. The focused word scrolls into view. Tab reaches “Ab hier lesen” directly; Shift+Tab returns to the selected word. Short screen-reader instructions describe this navigation.
+- Reproduced both the unbounded tab order and missing keyboard navigation in failing browser tests before implementing the change. New desktop/mobile tests check a 2,000-word text, one tab stop after selection, arrows, boundaries, Home/End, forward/backward tabbing and paused restart. Existing click/touch/double-click and current-position scrolling cases remain covered.
+- Final full suite: 22 unit tests passed, 27 browser tests passed, 1 intentionally skipped mobile double-click test; build/typecheck and formatting passed. The two keyboard navigation cases were additionally rerun and their focus screenshots inspected for desktop/mobile.
+- Same-agent second-pass review covered event target containment, numeric selector construction, selected/current word separation and focus retention; no unresolved blocker in this scope.
+- Deliberate limit: the full text still uses O(words) DOM nodes. This change bounds word tab stops and delegates event handling; it is not virtualization and makes no constant-memory or measured render-speed guarantee. Virtualization and real screen-reader/device testing remain future work.

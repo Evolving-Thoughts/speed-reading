@@ -1,13 +1,7 @@
-import {
-  Fragment,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useReducer,
-  useRef,
-} from "react";
+import { useEffect, useLayoutEffect, useMemo, useReducer, useRef } from "react";
 import { initialState, reducer } from "./state";
 import { ReaderWord } from "./ReaderWord";
+import { NormalText } from "./NormalText";
 import { usePlayback } from "./usePlayback";
 import { countWords } from "./reader";
 
@@ -256,26 +250,13 @@ export default function App() {
                 </span>
               </p>
             </div>
-            <div className="normal-text" aria-label="Vollständiger Text">
-              {words.map((word, index) => (
-                <Fragment key={index}>
-                  {word.leading}
-                  <button
-                    type="button"
-                    className={`text-word ${index === state.index ? "current" : ""} ${index === state.selected ? "selected" : ""}`}
-                    ref={index === state.index ? currentWord : undefined}
-                    onClick={() => dispatch({ type: "select", index })}
-                    onDoubleClick={() => dispatch({ type: "resume", index })}
-                    aria-pressed={index === state.selected}
-                    aria-current={
-                      index === state.index ? "location" : undefined
-                    }
-                  >
-                    {word.text}
-                  </button>
-                </Fragment>
-              ))}
-            </div>
+            <NormalText
+              words={words}
+              index={state.index}
+              selected={state.selected}
+              dispatch={dispatch}
+              currentWordRef={currentWord}
+            />
             <div className="selection-bar">
               <div className="selection-inner">
                 <span className="selected-label">

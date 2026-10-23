@@ -255,3 +255,75 @@ test("keeps the input word count consistent while editing and changing speed", a
     page.getByRole("progressbar", { name: "Lesefortschritt" }),
   ).toHaveAttribute("aria-valuemax", "3");
 });
+
+test("keeps only one word in the tab order for a long normal text", async ({
+  page,
+}) => {
+  await load(
+    page,
+    Array.from({ length: 2000 }, (_, i) => `Wort${i}`).join(" "),
+  );
+  await page.getByRole("button", { name: "Textansicht", exact: true }).click();
+  const buttons = page.locator(".normal-text button");
+  expect(
+    await buttons.evaluateAll(
+      (elements) =>
+        elements.filter((el) => (el as HTMLButtonElement).tabIndex === 0)
+          .length,
+    ),
+  ).toBe(1);
+  await page.getByRole("button", { name: "Wort1500", exact: true }).click();
+  expect(
+    await buttons.evaluateAll(
+      (elements) =>
+        elements.filter((el) => (el as HTMLButtonElement).tabIndex === 0)
+          .length,
+    ),
+  ).toBe(1);
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("button", { name: "Ab hier lesen" }),
+  ).toBeFocused();
+});
+
+test("navigates words with arrows and Home/End, then resumes from the selected word", async ({
+  page,
+}, info) => {
+  await load(page, "Eins zwei drei vier Ende!");
+  await page.getByRole("button", { name: "Textansicht", exact: true }).click();
+  await page.keyboard.press("Tab");
+  const first = page.getByRole("button", { name: "Eins", exact: true });
+  const last = page.getByRole("button", { name: "Ende!", exact: true });
+  await expect(first).toBeFocused();
+  await first.press("ArrowLeft");
+  await expect(first).toBeFocused();
+  await first.press("ArrowRight");
+  await expect(
+    page.getByRole("button", { name: "zwei", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("End");
+  await expect(last).toBeFocused();
+  await last.press("ArrowRight");
+  await expect(last).toBeFocused();
+  await last.press("Home");
+  await expect(first).toBeFocused();
+  await first.press("End");
+  await expect(last).toHaveAttribute("aria-pressed", "true");
+  await page.screenshot({
+    path: `test-results/${info.project.name}-keyboard-selection.png`,
+    fullPage: true,
+  });
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("button", { name: "Ab hier lesen" }),
+  ).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(last).toBeFocused();
+  await last.press("Enter");
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Enter");
+  await expect(word(page)).toHaveAttribute("aria-label", "Ende!");
+  await expect(
+    page.getByRole("status", { name: "Wiedergabestatus" }),
+  ).toHaveText("Pausiert");
+});

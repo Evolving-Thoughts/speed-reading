@@ -28,6 +28,7 @@ npm run preview
 - Jedes Wort erscheint um einen festen roten Ankerbuchstaben. Lange Wörter werden so verkleinert, dass sie nicht abgeschnitten werden.
 - Satzzeichen bleiben am Wort. Satzendwörter stehen dreimal so lange; Kommas verlängern die Anzeige nicht. WPM bezeichnet das **Grundtempo**, nicht den tatsächlichen Durchschnitt inklusive Satzendpausen.
 - „Textansicht“ pausiert und scrollt zur aktuellen, unterstrichenen Lesestelle. Ein Wort anklicken/antippen, dann „Ab hier lesen“ wählen. Auf dem Desktop geht auch Doppelklick. Der Wiedereinstieg ist pausiert.
+- Die Wortauswahl belegt nur einen Tab-Stopp. Pfeil links/rechts wechselt das ausgewählte Wort; Pos1/Ende springt zum ersten/letzten Wort. Tab führt zu „Ab hier lesen“, Umschalt+Tab zurück zur Auswahl.
 - „Text beenden“ bleibt oben in beiden Leseansichten sichtbar. Es führt jederzeit zur Texteingabe zurück; Text und Tempo bleiben erhalten und der Text kann ersetzt werden.
 - Am Textende bleibt das letzte Wort stehen; „Von vorne“ setzt pausiert zum ersten Wort zurück.
 - Ein ausgeblendeter Browser-Tab pausiert die Wiedergabe. Neuladen löscht die Sitzung; es wird weder Local Storage noch ein Service Worker verwendet.
@@ -68,5 +69,6 @@ Browsertests prüfen Bedienabläufe, Timing mit kontrollierter Browser-Uhr, Wort
 - `src/usePlayback.ts`: monotone Zeitsteuerung und Timer-Cleanup.
 - `src/ReaderWord.tsx`: Ankerposition und Größenanpassung.
 - `src/App.tsx`: Eingabe, Lesemodus, Textansicht und Tastaturbedienung.
+- `src/NormalText.tsx`: delegierte Wortauswahl mit einer roving Tab-Position und Pfeiltastennavigation.
 
 Die App rendert Nutzereingaben als React-Text, niemals als HTML. Sie lädt keine Fonts, Inhalte oder Analytik von externen Servern nach. Die Infrastruktur des später gewählten Hosts kann unabhängig davon Zugriffslogs erzeugen.
