@@ -52,3 +52,24 @@ it("ignores invalid resumes, empty loads and paused ticks", () => {
   expect(reducer(loaded(), { type: "tick" })).toEqual(loaded());
   expect(reducer(loaded(), { type: "resume", index: -1 })).toEqual(loaded());
 });
+
+it("defaults to normal font size and triple sentence duration", () => {
+  expect(initialState.fontScale).toBe(1);
+  expect(initialState.sentenceEndFactor).toBe(3);
+});
+it("keeps reading preferences across exit, reload and restart within the session", () => {
+  let s = reducer(loaded(), { type: "fontScale", value: 1.25 });
+  s = reducer(s, { type: "sentenceEndFactor", value: 2 });
+  s = reducer(s, { type: "finish" });
+  s = reducer(s, { type: "load" });
+  s = reducer(s, { type: "restart" });
+  expect([s.fontScale, s.sentenceEndFactor]).toEqual([1.25, 2]);
+});
+it("rejects unsupported reading preference values", () => {
+  expect(reducer(initialState, { type: "fontScale", value: NaN })).toEqual(
+    initialState,
+  );
+  expect(
+    reducer(initialState, { type: "sentenceEndFactor", value: 7 }),
+  ).toEqual(initialState);
+});

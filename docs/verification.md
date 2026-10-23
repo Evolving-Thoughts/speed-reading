@@ -56,3 +56,24 @@ Addressed the previously missed, non-blocking issue in review `pullrequestreview
 - Final full suite: 22 unit tests passed, 27 browser tests passed, 1 intentionally skipped mobile double-click test; build/typecheck and formatting passed. The two keyboard navigation cases were additionally rerun and their focus screenshots inspected for desktop/mobile.
 - Same-agent second-pass review covered event target containment, numeric selector construction, selected/current word separation and focus retention; no unresolved blocker in this scope.
 - Deliberate limit: the full text still uses O(words) DOM nodes. This change bounds word tab stops and delegates event handling; it is not virtualization and makes no constant-memory or measured render-speed guarantee. Virtualization and real screen-reader/device testing remain future work.
+
+## Reading controls follow-up
+
+Approved scope: native fullscreen, a four-step base font size, numeric WPM input alongside the slider, and a configurable sentence-end factor. Based on merged `main` at `9e8c1fbfe85b4f88b633bcaa62836f1d1b40b6c3`; changes are isolated to `feat/reading-controls`. No persistence, imports, accounts, deployment or unrelated refactoring was added.
+
+- Fullscreen uses the native document API. State follows `fullscreenchange`, including browser-side exits. The whole document enters fullscreen so both “Text beenden” and an exit button remain available across views. Unsupported browsers see a disabled button and a visible explanation; rejected requests are caught and do not prevent normal reading.
+- WPM can be entered exactly (100–1,200, integer steps). Enter or blur commits/clamps the number; blank/non-finite input restores the previous value. Enter does not submit the text form. Slider and number stay synchronized.
+- Font size options are 80%, 100% (default), 125%, 150% of the responsive base size. The setting applies to the reading word and normal text; long-word fitting and the fixed 38% anchor remain in place. Very long words can still shrink below the chosen base size.
+- Sentence-end duration is selectable as total 1×/2×/3×/4× word duration (default 3×). A tempo or factor change restarts the current word's full timer; font changes do not reset it. Settings survive text replacement/restart within the current tab, not reload.
+- Visual QA found that the taller input form could leave mobile readers scrolled into the reading area after loading. A failing mobile browser test reproduced this; non-text view transitions now reset window scrolling to the top. Normal text still scrolls to the current word.
+
+### Executed checks
+
+- Four new state/duration tests were first observed failing, then passed after implementation; final unit suite: **26 passed**.
+- Full Chromium suite with a frozen virtual clock for duration assertions: **51 passed, 1 intentionally skipped** (the existing desktop double-click test in mobile emulation).
+- New browser checks include number/range synchronization and bounds, font size in both views, settings retention/reset, factors 1/2/4 plus existing default-3 timing, live factor/tempo changes, font-change timer continuity, long-word fit, view-transition scrolling, actual native fullscreen entry/exit, browser-side exit via `exitFullscreen`, and simulated unsupported/rejected API paths.
+- TypeScript/production build and formatting passed. Existing tests for touch/keyboard selection, roving tab order, pause/finish/restart, literal text rendering, hidden-tab pause and local-only content remain included.
+- Individually inspected desktop/mobile input, default/large reader, enlarged normal text, fullscreen, unsupported/error states and long words, plus a 320px-width header/control check. Exported reader states were additionally rendered with the artifact capture helper; its only clipping diagnostic was the intentionally hidden screen-reader heading. No horizontal page overflow was found in the checked mobile widths.
+- Same-agent final review covered all changed/new source and tests against the merged-main baseline: numeric validation/implicit form submission, timer cleanup/dependencies, retained state, fullscreen error/event handling, anchor fitting, sticky exit actions and literal user-text rendering. No unresolved blocker in this scope; this is not an independent audit.
+
+Limits: actual native fullscreen was exercised in headless Chromium (desktop and touch emulation), not real mobile devices or Safari/Firefox. Browser-side exit was tested through the native API, not a native Escape-key dialog. Fullscreen availability on iPhone/iPad and embedded contexts depends on browser policy; the unsupported path is intentional. CI results are separate from these local checks. No merge or public deployment was performed.

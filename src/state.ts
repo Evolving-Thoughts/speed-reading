@@ -8,6 +8,8 @@ export type ReaderState = {
   playing: boolean;
   complete: boolean;
   wpm: number;
+  fontScale: number;
+  sentenceEndFactor: number;
 };
 export const initialState: ReaderState = {
   draft: "",
@@ -18,6 +20,8 @@ export const initialState: ReaderState = {
   playing: false,
   complete: false,
   wpm: 300,
+  fontScale: 1,
+  sentenceEndFactor: 3,
 };
 export type Action =
   | { type: "draft"; text: string }
@@ -30,7 +34,9 @@ export type Action =
   | { type: "finish" }
   | { type: "restart" }
   | { type: "pause" }
-  | { type: "speed"; wpm: number };
+  | { type: "speed"; wpm: number }
+  | { type: "fontScale"; value: number }
+  | { type: "sentenceEndFactor"; value: number };
 export function reducer(state: ReaderState, action: Action): ReaderState {
   if (action.type === "draft") return { ...state, draft: action.text };
   if (action.type === "load") {
@@ -48,6 +54,14 @@ export function reducer(state: ReaderState, action: Action): ReaderState {
       : state;
   }
   switch (action.type) {
+    case "fontScale":
+      return [0.8, 1, 1.25, 1.5].includes(action.value)
+        ? { ...state, fontScale: action.value }
+        : state;
+    case "sentenceEndFactor":
+      return [1, 2, 3, 4].includes(action.value)
+        ? { ...state, sentenceEndFactor: action.value }
+        : state;
     case "speed":
       return Number.isFinite(action.wpm)
         ? {

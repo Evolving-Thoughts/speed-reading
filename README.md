@@ -23,13 +23,15 @@ npm run preview
 ## Bedienung
 
 - Text einfügen oder den Beispieltext laden. Die kurze Erklärung unter der Texteingabe ist optional aufklappbar.
-- Tempo zwischen 100 und 1.200 WPM wählen (Standard: 300). Der Einstieg ist immer pausiert.
+- Tempo zwischen 100 und 1.200 WPM wählen (Standard: 300), per Schieberegler oder Zahlenfeld. Das Zahlenfeld übernimmt mit Enter oder beim Verlassen den gerundeten Wert und begrenzt ihn auf den Bereich; eine leere/ungültige Eingabe wird zurückgesetzt. Enter im Zahlenfeld startet die Leseansicht nicht. Der Einstieg ist immer pausiert.
 - Start/Pause per Button oder Leertaste. In Eingabefeldern und auf nativen Bedienelementen behält die Leertaste ihre normale Bedeutung.
 - Jedes Wort erscheint um einen festen roten Ankerbuchstaben. Lange Wörter werden so verkleinert, dass sie nicht abgeschnitten werden.
-- Satzzeichen bleiben am Wort. Satzendwörter stehen dreimal so lange; Kommas verlängern die Anzeige nicht. WPM bezeichnet das **Grundtempo**, nicht den tatsächlichen Durchschnitt inklusive Satzendpausen.
+- Satzzeichen bleiben am Wort. Die Satzendpause ist wählbar: Aus (1×), Kurz (2×), Normal (3×, Standard) oder Lang (4×). Der Faktor bezeichnet die gesamte Wortdauer, nicht eine zusätzliche Pause; Kommas verlängern die Anzeige nicht. WPM bezeichnet das **Grundtempo**, nicht den tatsächlichen Durchschnitt inklusive Satzendpausen.
+- Schriftgröße in vier Stufen wählen: Klein (80 %), Normal (100 %, Standard), Groß (125 %) und Sehr groß (150 %). Sie gilt für das Lesewort und die normale Textansicht. Lange Wörter werden weiterhin passend verkleinert; die Einstellung ist deshalb eine Basisgröße, keine garantierte Mindestgröße.
+- Vollbild über den Button oben starten/verlassen, auch in der Texteingabe. Escape bzw. die Browserbedienung beendet Vollbild ebenfalls; der Button folgt dem tatsächlichen Browserzustand. Ohne unterstützte Fullscreen API bleibt der Button deaktiviert und ein Hinweis erscheint. Bei abgelehnter Anfrage bleibt die normale Ansicht benutzbar.
 - „Textansicht“ pausiert und scrollt zur aktuellen, unterstrichenen Lesestelle. Ein Wort anklicken/antippen, dann „Ab hier lesen“ wählen. Auf dem Desktop geht auch Doppelklick. Der Wiedereinstieg ist pausiert.
 - Die Wortauswahl belegt nur einen Tab-Stopp. Pfeil links/rechts wechselt das ausgewählte Wort; Pos1/Ende springt zum ersten/letzten Wort. Tab führt zu „Ab hier lesen“, Umschalt+Tab zurück zur Auswahl.
-- „Text beenden“ bleibt oben in beiden Leseansichten sichtbar. Es führt jederzeit zur Texteingabe zurück; Text und Tempo bleiben erhalten und der Text kann ersetzt werden.
+- „Text beenden“ bleibt oben in beiden Leseansichten sichtbar. Es führt jederzeit zur Texteingabe zurück; Text, Tempo, Schriftgröße und Satzendpause bleiben innerhalb der Sitzung erhalten und der Text kann ersetzt werden.
 - Am Textende bleibt das letzte Wort stehen; „Von vorne“ setzt pausiert zum ersten Wort zurück.
 - Ein ausgeblendeter Browser-Tab pausiert die Wiedergabe. Neuladen löscht die Sitzung; es wird weder Local Storage noch ein Service Worker verwendet.
 
@@ -39,7 +41,7 @@ Ankerregel, inklusive Satzzeichen gezählt: 1 Zeichen → erstes, 2–5 → zwei
 
 Satzenden: `.`, `!`, `?`, `…`, auch vor schließenden Anführungszeichen oder Klammern. Eine kleine Liste häufiger Abkürzungen wird ausgenommen; das ist keine vollständige linguistische Satzsegmentierung. Alleinstehende Satzzeichen werden an das vorherige Wort angefügt. Absatzumbrüche bleiben in der Textansicht erhalten.
 
-Die Zeitsteuerung verwendet `performance.now()` und bricht beim Pausieren ausstehende Timer ab. Browser und Bildwiederholrate können die reale Dauer verlängern; es werden keine Wörter übersprungen, um verspätete Frames aufzuholen. Pause/Start und Tempoänderungen geben dem aktuellen Wort eine neue volle Anzeigedauer.
+Die Zeitsteuerung verwendet `performance.now()` und bricht beim Pausieren ausstehende Timer ab. Browser und Bildwiederholrate können die reale Dauer verlängern; es werden keine Wörter übersprungen, um verspätete Frames aufzuholen. Pause/Start, Tempo- und Satzendpausenänderungen geben dem aktuellen Wort eine neue volle Anzeigedauer. Schriftgrößenänderungen setzen den Timer nicht zurück.
 
 Sehr lange Wörter können auf schmalen Displays klein werden; die normale Textansicht bleibt als Alternative verfügbar. PDF-/Linkimport, Bilder, Konten und dauerhafte Speicherung sind bewusst nicht enthalten. Es wird kein höheres Textverständnis durch höheres Tempo versprochen.
 
@@ -60,6 +62,8 @@ Falls Chromium bereits systemweit installiert ist:
 CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e
 ```
 
+Browsertests prüfen zusätzlich Zahlenfeld/Schieberegler-Synchronisierung, Schriftgröße und Sitzungseinstellungen, konfigurierbare Satzenddauer, native Vollbildwechsel inklusive browserseitigem Verlassen sowie fehlende/abgelehnte Fullscreen API.
+
 Browsertests prüfen Bedienabläufe, Timing mit kontrollierter Browser-Uhr, Wortauswahl, Textende, Abbruch, lange Wörter, Textdarstellung ohne HTML-Ausführung und Zurücksetzen nach Neuladen. Die Sichtbarkeitsänderung wird synthetisch ausgelöst; sie ersetzt keinen echten Hintergrund-Tab-Test auf allen Betriebssystemen. Smartphone-Tests emulieren Chromium mit Touch, nicht iOS/Safari oder reale Hardware. Screenshots sind unter `test-results/` verfügbar, werden aber nicht versioniert. CI führt Formatierung, Tests, Build und Chromium-Browsertests aus.
 
 ## Aufbau
@@ -68,6 +72,8 @@ Browsertests prüfen Bedienabläufe, Timing mit kontrollierter Browser-Uhr, Wort
 - `src/state.ts`: pure Zustandsübergänge der Sitzung.
 - `src/usePlayback.ts`: monotone Zeitsteuerung und Timer-Cleanup.
 - `src/ReaderWord.tsx`: Ankerposition und Größenanpassung.
+- `src/ReadingSettings.tsx`: Tempoeingabe, Basis-Schriftgröße und Satzendpause.
+- `src/useFullscreen.ts`: native Fullscreen API mit Statusabgleich und Fehlerhinweis.
 - `src/App.tsx`: Eingabe, Lesemodus, Textansicht und Tastaturbedienung.
 - `src/NormalText.tsx`: delegierte Wortauswahl mit einer roving Tab-Position und Pfeiltastennavigation.
 
