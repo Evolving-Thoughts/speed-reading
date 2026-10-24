@@ -66,3 +66,12 @@ describe("lightweight word count", () => {
     expect(countWords("Hallo Welt! ".repeat(5000))).toBe(10000);
   });
 });
+
+it("applies the selected sentence-end factor without slowing ordinary words", () => {
+  const [normal, end] = tokenize("Hallo Welt!");
+  expect(wordDuration(end, 300, 1)).toBe(200);
+  expect(wordDuration(end, 300, 2)).toBe(400);
+  expect(wordDuration(end, 300, 3)).toBe(600);
+  expect(wordDuration(end, 300, 4)).toBe(800);
+  expect(wordDuration(normal, 300, 4)).toBe(200);
+});

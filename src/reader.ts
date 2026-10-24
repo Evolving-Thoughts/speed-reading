@@ -58,9 +58,14 @@ export function anchorIndex(text: string): number {
   }
   return index;
 }
-export function wordDuration(word: Word, wpm: number): number {
+export function wordDuration(
+  word: Word,
+  wpm: number,
+  sentenceEndFactor = 3,
+): number {
   return (
-    (60000 / Math.max(100, Math.min(1200, wpm))) * (word.sentenceEnd ? 3 : 1)
+    (60000 / Math.max(100, Math.min(1200, wpm))) *
+    (word.sentenceEnd ? sentenceEndFactor : 1)
   );
 }
 

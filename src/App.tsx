@@ -1,7 +1,16 @@
-import { useEffect, useLayoutEffect, useMemo, useReducer, useRef } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  type CSSProperties,
+} from "react";
 import { initialState, reducer } from "./state";
 import { ReaderWord } from "./ReaderWord";
 import { NormalText } from "./NormalText";
+import { ReadingSettings } from "./ReadingSettings";
+import { useFullscreen } from "./useFullscreen";
 import { usePlayback } from "./usePlayback";
 import { countWords } from "./reader";
 
@@ -9,6 +18,7 @@ const example =
   "Manchmal braucht eine gute Idee keinen großen Plan. Es reicht, einen Gedanken festzuhalten und ihm ein Stück zu folgen.\n\nEin kurzer Text, ein ruhiger Moment. Wir lesen weiter und finden heraus, welche Richtung sich daraus ergibt.";
 export default function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const fullscreen = useFullscreen();
   const currentWord = useRef<HTMLButtonElement>(null);
   const mainHeading = useRef<HTMLHeadingElement>(null);
   usePlayback(state, dispatch);
@@ -47,6 +57,7 @@ export default function App() {
   }, [state.view, state.complete]);
   useLayoutEffect(() => {
     mainHeading.current?.focus({ preventScroll: true });
+    if (state.view !== "text") window.scrollTo({ top: 0, behavior: "instant" });
     if (state.view === "text")
       currentWord.current?.scrollIntoView({
         block: "center",
@@ -65,51 +76,88 @@ export default function App() {
       ? "Läuft"
       : "Pausiert";
   const speedControl = (
-    <div className="speed-control">
-      <div className="speed-heading">
-        <label htmlFor="speed">Lesetempo</label>
-        <span>
-          <output htmlFor="speed">{state.wpm}</output>{" "}
-          <span className="muted">WPM</span>
-        </span>
-      </div>
-      <input
-        id="speed"
-        type="range"
-        min="100"
-        max="1200"
-        step="10"
-        value={state.wpm}
-        onChange={(e) =>
-          dispatch({ type: "speed", wpm: Number(e.target.value) })
-        }
-      />
-      <div className="range-labels" aria-hidden="true">
-        <span>100</span>
-        <span>1.200</span>
-      </div>
-      <p className="hint">Satzenden bleiben dreimal so lange stehen.</p>
-    </div>
+    <ReadingSettings
+      wpm={state.wpm}
+      fontScale={state.fontScale}
+      sentenceEndFactor={state.sentenceEndFactor}
+      dispatch={dispatch}
+    />
   );
   return (
-    <div className="app-shell">
+    <div
+      className="app-shell"
+      style={{ "--reading-scale": state.fontScale } as CSSProperties}
+    >
       <header className="app-header">
-        <a
-          className="brand"
-          href="#main"
-          aria-label="Speed Reading – zum Inhalt"
-        >
-          speed <span>/</span> reading
-        </a>
-        {state.view !== "input" ? (
-          <button
-            className="button end-button"
-            onClick={() => dispatch({ type: "finish" })}
+        <div className="header-main">
+          <a
+            className="brand"
+            href="#main"
+            aria-label="Speed Reading – zum Inhalt"
           >
-            Text beenden
-          </button>
-        ) : (
-          <span className="privacy-label">Lokal. Ohne Upload.</span>
+            speed <span>/</span> reading
+          </a>
+          <div className="header-actions">
+            {state.view === "input" && (
+              <span className="privacy-label">Lokal. Ohne Upload.</span>
+            )}
+            <button
+              className="button fullscreen-button"
+              disabled={!fullscreen.supported || fullscreen.busy}
+              aria-label={
+                fullscreen.active ? "Vollbild verlassen" : "Vollbild starten"
+              }
+              aria-pressed={fullscreen.active}
+              title={
+                !fullscreen.supported
+                  ? "Vollbild wird in diesem Browser nicht unterstützt."
+                  : fullscreen.active
+                    ? "Vollbild verlassen"
+                    : "Vollbild starten"
+              }
+              onClick={() => void fullscreen.toggle()}
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                aria-hidden="true"
+              >
+                <path
+                  d={
+                    fullscreen.active
+                      ? "M4 9h5V4M20 9h-5V4M4 15h5v5M20 15h-5v5"
+                      : "M9 4H4v5M15 4h5v5M4 15v5h5M20 15v5h-5"
+                  }
+                />
+              </svg>
+              <span className="fullscreen-label">
+                {fullscreen.active ? "Vollbild verlassen" : "Vollbild"}
+              </span>
+            </button>
+            {state.view !== "input" && (
+              <button
+                className="button end-button"
+                onClick={() => dispatch({ type: "finish" })}
+              >
+                Text beenden
+              </button>
+            )}
+          </div>
+        </div>
+        {(!fullscreen.supported || fullscreen.error) && (
+          <p
+            className="header-notice"
+            role="status"
+            aria-label="Vollbildhinweis"
+          >
+            {fullscreen.supported
+              ? fullscreen.error
+              : "Vollbild wird in diesem Browser nicht unterstützt."}
+          </p>
         )}
       </header>
       <main id="main">
@@ -182,7 +230,7 @@ export default function App() {
             <h1 className="sr-only" ref={mainHeading} tabIndex={-1}>
               Speedreading
             </h1>
-            <ReaderWord word={words[state.index]} />
+            <ReaderWord word={words[state.index]} fontScale={state.fontScale} />
             <div className="reader-meta">
               <span role="status" aria-label="Wiedergabestatus">
                 {status}

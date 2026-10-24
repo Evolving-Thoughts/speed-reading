@@ -352,7 +352,7 @@ input[type="range"] {
 }
 .normal-text {
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 22px;
+  font-size: calc(22px * var(--reading-scale, 1));
   line-height: 2;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -422,6 +422,74 @@ input[type="range"] {
   white-space: nowrap;
   border: 0;
 }
+/* Session-only reading controls; native fullscreen keeps all exit actions available. */
+.app-header {
+  display: block;
+}
+.header-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.fullscreen-button {
+  min-width: 44px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+.header-notice {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 12px 0 0;
+}
+.speed-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.speed-number {
+  width: 94px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid #59616f;
+  border-radius: 6px;
+  background: #191d24;
+  color: #f2f2ef;
+  font-weight: 700;
+}
+.reading-preferences {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 24px 0 0;
+}
+.reading-preferences label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  min-width: 0;
+}
+.reading-preferences select {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  color: #f2f2ef;
+  background: #191d24;
+  border: 1px solid #59616f;
+  border-radius: 6px;
+  font: inherit;
+}
+:root:fullscreen {
+  background: #101216;
+  overflow: auto;
+}
 @media (max-width: 600px) {
   .app-header {
     min-height: 76px;
@@ -459,7 +527,7 @@ input[type="range"] {
   }
   .word-viewport {
     margin: 12px 20px 0;
-    height: clamp(260px, 42dvh, 370px);
+    height: clamp(220px, 34dvh, 300px);
   }
   .reader-meta {
     padding: 12px 20px 24px;
@@ -483,7 +551,7 @@ input[type="range"] {
     font-size: 30px;
   }
   .normal-text {
-    font-size: 20px;
+    font-size: calc(20px * var(--reading-scale, 1));
   }
   .selection-bar {
     padding: 16px 20px;
@@ -496,6 +564,25 @@ input[type="range"] {
   }
   .text-heading .intro {
     margin-bottom: 24px;
+  }
+
+  .header-main {
+    gap: 8px;
+  }
+  .header-actions {
+    gap: 8px;
+  }
+  .fullscreen-label {
+    display: none;
+  }
+  .header-actions .privacy-label {
+    display: none;
+  }
+  .fullscreen-button {
+    padding: 10px;
+  }
+  .reading-preferences {
+    gap: 12px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -513,5 +600,9 @@ input[type="range"] {
   }
   .app-header {
     gap: 8px;
+  }
+
+  .header-actions {
+    gap: 4px;
   }
 }

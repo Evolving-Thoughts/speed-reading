@@ -18,7 +18,11 @@ export function usePlayback(state: ReaderState, dispatch: Dispatch<Action>) {
       prior.wpm === state.wpm;
     const deadline =
       (continuous ? Math.max(prior.deadline, now) : now) +
-      wordDuration(state.words[state.index], state.wpm);
+      wordDuration(
+        state.words[state.index],
+        state.wpm,
+        state.sentenceEndFactor,
+      );
     previous.current = {
       index: state.index,
       wpm: state.wpm,
@@ -37,5 +41,12 @@ export function usePlayback(state: ReaderState, dispatch: Dispatch<Action>) {
     };
     timer = setTimeout(advance, Math.max(0, deadline - performance.now()));
     return () => clearTimeout(timer);
-  }, [state.playing, state.index, state.wpm, state.words, dispatch]);
+  }, [
+    state.playing,
+    state.index,
+    state.wpm,
+    state.sentenceEndFactor,
+    state.words,
+    dispatch,
+  ]);
 }

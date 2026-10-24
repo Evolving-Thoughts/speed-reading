@@ -1,6 +1,12 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { characters, type Word } from "./reader";
-export function ReaderWord({ word }: { word: Word }) {
+export function ReaderWord({
+  word,
+  fontScale = 1,
+}: {
+  word: Word;
+  fontScale?: number;
+}) {
   const viewport = useRef<HTMLDivElement>(null);
   const text = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState(88);
@@ -22,7 +28,7 @@ export function ReaderWord({ word }: { word: Word }) {
         after.getBoundingClientRect().width +
         anchor.getBoundingClientRect().width / 2;
       const width = box.clientWidth;
-      const max = width < 600 ? 56 : 88;
+      const max = (width < 600 ? 56 : 88) * fontScale;
       const fitted = Math.min(
         max,
         (100 * (width * 0.38 - 20)) / Math.max(1, left),
@@ -38,7 +44,7 @@ export function ReaderWord({ word }: { word: Word }) {
       if (element.isConnected) measure();
     });
     return () => observer.disconnect();
-  }, [word.text, word.anchor]);
+  }, [word.text, word.anchor, fontScale]);
   return (
     <div className="word-viewport" ref={viewport}>
       <div className="guide guide-top" aria-hidden="true" />
