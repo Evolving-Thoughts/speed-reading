@@ -1,4 +1,6 @@
+import type { ArticleImage } from "./article";
 export type Word = {
+  image?: ArticleImage;
   text: string;
   leading: string;
   anchor: number;

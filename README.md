@@ -1,6 +1,6 @@
 # Speed / Reading
 
-Eine rein clientseitige Speedreading-App mit React, TypeScript und Vite. Dunkle Fokusansicht für Desktop und Smartphone. Kein Konto, kein Backend, kein Tracking und kein Upload des Lesetextes.
+Speedreading-App mit React, TypeScript und Vite sowie einem kleinen lokalen Node.js-Importdienst. Dunkle Fokusansicht für Desktop und Smartphone. Kein Konto, keine App-Analytik und keine dauerhafte Speicherung. Manuell eingefügter Text bleibt im Browser; beim Linkimport lädt der lokale Dienst die Artikelseite und ihre Bilder.
 
 ## Lokal starten
 
@@ -11,14 +11,34 @@ npm ci
 npm run dev
 ```
 
-Die lokale Adresse wird im Terminal ausgegeben. Produktionsversion:
+`npm run dev` startet Vite und die Import-API gemeinsam. Die App läuft standardmäßig auf Port 5173, die API auf 4174 (über `API_PORT` änderbar). Öffne nur die App-Adresse, nicht die API. Node.js 24 ist auch zum Ausführen des Importdienstes nötig. Beide Prozesse werden beim Beenden gemeinsam gestoppt.
+
+Gebauter lokaler Stand:
 
 ```sh
 npm run build
 npm run preview
 ```
 
-`dist/` kann auf einem statischen Host unter der Domainwurzel bereitgestellt werden. Es gibt keine serverseitigen Routen. Ein Hosting/Deployment ist nicht Teil dieses PRs.
+`npm run preview` bzw. `npm start` liefert `dist/` und die Import-API gemeinsam auf `http://127.0.0.1:4173` aus (`PORT` änderbar). **Ein rein statischer Host reicht für den Linkimport nicht mehr.** Der Dienst bindet bewusst nur an Loopback und akzeptiert lokale Hosts. Eine öffentliche Bereitstellung ist nicht Teil dieses PRs; dafür wären eine separate Deployment-/Authentifizierungs- und Missbrauchsschutzentscheidung erforderlich.
+
+## Artikel per Link importieren
+
+1. Einen öffentlichen HTTP(S)-Artikellink eingeben und „Artikel laden“ wählen. Queryparameter von Freigabelinks bleiben beim Abruf erhalten. Keine Passwörter oder Anmeldung hinterlegen.
+2. Die erkannte Vorschau mit Text, Bildern und Bildunterschriften prüfen. „Artikel übernehmen“ startet pausiert mit dem ersten Leseschritt.
+3. Bilder erscheinen an ihrer erkannten Position. Die Wiedergabe hält an; „Weiterlesen“ geht zum nächsten Schritt und setzt bei Text die Wiedergabe fort. Auch aufeinanderfolgende oder abschließende Bilder benötigen die bewusste Fortsetzung.
+4. Die Textansicht zeigt Text und Bilder gemeinsam. Wortauswahl und pausierter Wiedereinstieg bleiben erhalten; ein Bild kann ebenfalls als Einstiegsstelle ausgewählt werden.
+
+„Text beenden“ erhält den importierten Artikel innerhalb der Sitzung. Eine Änderung im manuellen Textfeld wechselt beim nächsten Laden zu reinem Text ohne Bilder. Neuladen setzt alles zurück. Fehlgeschlagene/abgebrochene Importe überschreiben den manuellen Entwurf nicht.
+
+### Grenzen und Datenschutz des Imports
+
+- Mozilla Readability erkennt den Hauptinhalt ohne Skriptausführung. Inline-Bilder, relative URLs, `srcset`/Picture- und häufige Lazy-Loading-Attribute werden berücksichtigt; Bildunterschriften werden angezeigt, aber nicht als Fließtext vorgelesen. Navigation und Skripte werden entfernt. Dies ist eine Heuristik: Erkennung, Vollständigkeit und Reihenfolge sind nicht für jede Website garantiert. Hintergrundbilder, Video/Canvas, CSS-Layouts und JavaScript-nachgeladene Inhalte werden nicht rekonstruiert.
+- Paywalls, Anmeldungen oder Bot-Sperren werden nicht umgangen. Der bereitgestellte Medium-Freigabelink wurde live mit dem Backend getestet und von Medium weiterhin abgewiesen. Seine erfolgreiche Erkennung ist daher **nicht bestätigt**. Die App bietet dafür einen Hinweis und manuelles Einfügen; ein Freigabelink ist keine Garantie für automatischen Zugriff.
+- Der Dienst lädt ausschließlich öffentliche HTTP(S)-Adressen mit Standardports, validiert alle DNS-Ergebnisse und jeden Redirect und pinnt eine geprüfte IP für die Verbindung. Lokale/private/reservierte IPs, URL-Zugangsdaten und fremde Protokolle werden abgewiesen. TLS-Prüfung bleibt aktiviert; keine Browser-Cookies, Referer oder Anmeldedaten werden an die Quelle weitergegeben.
+- Abrufgrenzen: 15 Sekunden, höchstens 5 Redirects, 2 MiB HTML bzw. 8 MiB pro Bild (auch nach Dekomprimierung), höchstens 250.000 Textzeichen/3.000 Blöcke/50 Bilder. Es gibt ein lokales Artikel-Ratelimit und eine begrenzte Anzahl gleichzeitiger Abrufe.
+- Bilder werden über lokal signierte, eine Stunde gültige URLs abgerufen, nicht direkt im Browser von Drittseiten. JPEG, PNG, WebP, GIF und AVIF sind erlaubt; kein SVG/HTML. Bei nicht erreichbaren oder abgelaufenen Bildern kann trotzdem weitergelesen werden; bei Bedarf den Artikel neu importieren. Ein Serverneustart macht bestehende Bildlinks ungültig.
+- Artikel-URLs und deren Freigabeparameter werden nicht protokolliert oder dauerhaft gespeichert. Die Zielwebsite/Bildquelle sieht jedoch den Abruf und die IP des Importdienstes und kann eigene Zugriffslogs führen. Die Browseranzeige enthält den Quellenlink; Bilddaten können kurz im privaten Browsercache liegen. Keine externen KI-/Scraping-Dienste.
 
 ## Bedienung
 
@@ -43,7 +63,7 @@ Satzenden: `.`, `!`, `?`, `…`, auch vor schließenden Anführungszeichen oder 
 
 Die Zeitsteuerung verwendet `performance.now()` und bricht beim Pausieren ausstehende Timer ab. Browser und Bildwiederholrate können die reale Dauer verlängern; es werden keine Wörter übersprungen, um verspätete Frames aufzuholen. Pause/Start, Tempo- und Satzendpausenänderungen geben dem aktuellen Wort eine neue volle Anzeigedauer. Schriftgrößenänderungen setzen den Timer nicht zurück.
 
-Sehr lange Wörter können auf schmalen Displays klein werden; die normale Textansicht bleibt als Alternative verfügbar. PDF-/Linkimport, Bilder, Konten und dauerhafte Speicherung sind bewusst nicht enthalten. Es wird kein höheres Textverständnis durch höheres Tempo versprochen.
+Sehr lange Wörter können auf schmalen Displays klein werden; die normale Textansicht bleibt als Alternative verfügbar. PDF-Import, Konten und dauerhafte Speicherung sind bewusst nicht enthalten. Artikel-Links und Inline-Bilder sind wie oben beschrieben unterstützt. Es wird kein höheres Textverständnis durch höheres Tempo versprochen.
 
 ## Prüfungen
 
@@ -68,6 +88,9 @@ Browsertests prüfen Bedienabläufe, Timing mit kontrollierter Browser-Uhr, Wort
 
 ## Aufbau
 
+- `server/`: Artikelparser, abgesicherter HTTP-Abruf, signierte Bildlinks und lokale API/static server.
+- `scripts/dev.mjs`: gemeinsamer Start und Stopp von Vite/API.
+- `src/ArticleImport.tsx`, `src/ArticleImage.tsx`, `src/article.ts`: Vorschau, Bildschritte und API-Datenvalidierung.
 - `src/reader.ts`: Textaufbereitung, Anker, Wortdauer.
 - `src/state.ts`: pure Zustandsübergänge der Sitzung.
 - `src/usePlayback.ts`: monotone Zeitsteuerung und Timer-Cleanup.
@@ -77,4 +100,4 @@ Browsertests prüfen Bedienabläufe, Timing mit kontrollierter Browser-Uhr, Wort
 - `src/App.tsx`: Eingabe, Lesemodus, Textansicht und Tastaturbedienung.
 - `src/NormalText.tsx`: delegierte Wortauswahl mit einer roving Tab-Position und Pfeiltastennavigation.
 
-Die App rendert Nutzereingaben als React-Text, niemals als HTML. Sie lädt keine Fonts, Inhalte oder Analytik von externen Servern nach. Die Infrastruktur des später gewählten Hosts kann unabhängig davon Zugriffslogs erzeugen.
+Die App rendert Nutzereingaben als React-Text, niemals als HTML. Sie lädt keine externen Fonts oder Analytik. Externe Artikel und Bilder werden nur beim ausdrücklich ausgelösten Linkimport über den lokalen Importdienst geladen. Die Infrastruktur des später gewählten Hosts kann unabhängig davon Zugriffslogs erzeugen.

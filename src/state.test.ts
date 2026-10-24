@@ -73,3 +73,45 @@ it("rejects unsupported reading preference values", () => {
     reducer(initialState, { type: "sentenceEndFactor", value: 7 }),
   ).toEqual(initialState);
 });
+it("pauses at an article image until explicit continuation, including consecutive and final images", () => {
+  const image = {
+    type: "image" as const,
+    src: "/api/image?token=fixture",
+    alt: "Bild",
+    caption: "",
+  };
+  let s = reducer(initialState, {
+    type: "article",
+    article: {
+      title: "Artikel",
+      sourceUrl: "https://example.com",
+      blocks: [
+        { type: "text", text: "Anfang" },
+        image,
+        image,
+        { type: "text", text: "Ende" },
+        image,
+      ],
+    },
+  });
+  s = reducer(s, { type: "toggle" });
+  s = reducer(s, { type: "tick" });
+  expect([s.index, s.playing, s.complete]).toEqual([1, false, false]);
+  expect(reducer(s, { type: "toggle" }).playing).toBe(false);
+  s = reducer(s, { type: "continueImage" });
+  expect([s.index, s.playing]).toEqual([2, false]);
+  s = reducer(s, { type: "continueImage" });
+  expect([s.index, s.playing]).toEqual([3, true]);
+  s = reducer(s, { type: "tick" });
+  expect([s.index, s.playing]).toEqual([4, false]);
+  s = reducer(s, { type: "continueImage" });
+  expect(s.complete).toBe(true);
+  s = reducer(s, { type: "restart" });
+  expect([s.index, s.playing]).toEqual([0, false]);
+  s = reducer(s, { type: "finish" });
+  s = reducer(s, { type: "load" });
+  expect(s.words.filter((w) => w.image)).toHaveLength(3);
+  s = reducer(s, { type: "draft", text: "Neuer Text" });
+  s = reducer(s, { type: "load" });
+  expect(s.words.map((w) => w.text)).toEqual(["Neuer", "Text"]);
+});

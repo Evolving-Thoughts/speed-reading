@@ -12,6 +12,8 @@ import { NormalText } from "./NormalText";
 import { ReadingSettings } from "./ReadingSettings";
 import { useFullscreen } from "./useFullscreen";
 import { usePlayback } from "./usePlayback";
+import { ArticleImport } from "./ArticleImport";
+import { ArticleImage } from "./ArticleImage";
 import { countWords } from "./reader";
 
 const example =
@@ -70,11 +72,14 @@ export default function App() {
   const progress = words.length
     ? Math.round(((state.index + 1) / words.length) * 100)
     : 0;
+  const image = words[state.index]?.image;
   const status = state.complete
     ? "Text beendet"
-    : state.playing
-      ? "Läuft"
-      : "Pausiert";
+    : image
+      ? "Bildpause"
+      : state.playing
+        ? "Läuft"
+        : "Pausiert";
   const speedControl = (
     <ReadingSettings
       wpm={state.wpm}
@@ -99,7 +104,7 @@ export default function App() {
           </a>
           <div className="header-actions">
             {state.view === "input" && (
-              <span className="privacy-label">Lokal. Ohne Upload.</span>
+              <span className="privacy-label">Lokaler Importdienst.</span>
             )}
             <button
               className="button fullscreen-button"
@@ -172,8 +177,12 @@ export default function App() {
             <p className="intro">
               Text einfügen, Tempo wählen, loslesen.
               <br />
-              Deine Texte bleiben in diesem Browser-Tab.
+              Eingefügter Text bleibt in diesem Browser-Tab.
             </p>
+            <ArticleImport
+              initialArticle={state.article}
+              onRead={(article) => dispatch({ type: "article", article })}
+            />
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -230,7 +239,14 @@ export default function App() {
             <h1 className="sr-only" ref={mainHeading} tabIndex={-1}>
               Speedreading
             </h1>
-            <ReaderWord word={words[state.index]} fontScale={state.fontScale} />
+            {image ? (
+              <ArticleImage key={image.src} image={image} reading />
+            ) : (
+              <ReaderWord
+                word={words[state.index]}
+                fontScale={state.fontScale}
+              />
+            )}
             <div className="reader-meta">
               <span role="status" aria-label="Wiedergabestatus">
                 {status}
@@ -256,6 +272,13 @@ export default function App() {
                   >
                     Von vorne
                   </button>
+                ) : image ? (
+                  <button
+                    className="button primary"
+                    onClick={() => dispatch({ type: "continueImage" })}
+                  >
+                    Weiterlesen
+                  </button>
                 ) : (
                   <button
                     className="button primary"
@@ -274,9 +297,10 @@ export default function App() {
               </div>
               {speedControl}
               <p className="session-info">
-                Wort {state.index + 1} von {words.length}{" "}
-                <span aria-hidden="true">·</span> {progress} % gelesen
-                <span className="keyboard-tip">
+                {state.article ? "Leseschritt" : "Wort"} {state.index + 1} von{" "}
+                {words.length} <span aria-hidden="true">·</span> {progress} %
+                gelesen
+                <span className="keyboard-tip" hidden={Boolean(image)}>
                   {" "}
                   · Leertaste für Start/Pause
                 </span>
@@ -309,7 +333,9 @@ export default function App() {
               <div className="selection-inner">
                 <span className="selected-label">
                   {state.selected !== null
-                    ? `„${words[state.selected].text}“`
+                    ? words[state.selected].image
+                      ? "Bild ausgewählt"
+                      : `„${words[state.selected].text}“`
                     : "Wort auswählen"}
                 </span>
                 <button
