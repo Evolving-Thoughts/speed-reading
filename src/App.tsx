@@ -252,7 +252,10 @@ export default function App() {
             </details>
           </section>
         ) : state.view === "reader" ? (
-          <section className="reading-screen" aria-label="Speedreading">
+          <section
+            className={`reading-screen ${image ? "image-reader" : "word-reader"}`}
+            aria-label="Speedreading"
+          >
             <h1 className="sr-only" ref={mainHeading} tabIndex={-1}>
               Speedreading
             </h1>

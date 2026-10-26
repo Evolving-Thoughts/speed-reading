@@ -607,13 +607,14 @@ input[type="range"] {
   border-color: #9cc6ff;
 }
 
-/* Compact reader only: keep input and full-text views unchanged. */
+/* Reader-only layout: keep input and full-text views unchanged. */
 .reader-session .app-header {
   min-height: 64px;
   padding: 9px 24px;
 }
 .reader-session .word-viewport {
-  height: clamp(176px, calc(100dvh - 480px), 400px);
+  /* ReaderWord desktop maximum: 88px × 1.3 line-height × scale, plus guide space. */
+  height: calc(114.4px * var(--reading-scale, 1) + 64px);
   margin: 8px 24px 0;
 }
 .reader-session .guide-top {
@@ -683,6 +684,24 @@ input[type="range"] {
 .reader-session .reading-image .image-caption,
 .reader-session .reading-image .hint {
   margin-top: 8px;
+}
+
+.reader-session .word-reader .reader-controls {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+.reader-session .word-reader .speed-control {
+  gap: 10px 32px;
+  margin: 24px 0 0;
+}
+.reader-session .word-reader .reading-preferences {
+  gap: 20px;
+}
+.reader-session .word-reader .reading-preferences label {
+  gap: 10px;
+}
+.reader-session .word-reader .session-info {
+  margin-top: 16px;
 }
 
 @media (max-width: 600px) {
@@ -794,7 +813,8 @@ input[type="range"] {
     padding: 9px 20px;
   }
   .reader-session .word-viewport {
-    height: clamp(128px, calc(100dvh - 540px), 260px);
+    /* ReaderWord mobile maximum: 56px × 1.3 line-height × scale. */
+    height: calc(72.8px * var(--reading-scale, 1) + 40px);
     margin: 8px 20px 0;
   }
   .reader-session .reader-meta {
@@ -841,6 +861,23 @@ input[type="range"] {
   .reader-session .app-footer {
     padding: 8px 20px;
     gap: 4px;
+  }
+  .reader-session .word-reader .reader-controls {
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+  .reader-session .word-reader .speed-control {
+    gap: 8px 16px;
+    margin: 16px 0 0;
+  }
+  .reader-session .word-reader .reading-preferences {
+    gap: 12px;
+  }
+  .reader-session .word-reader .reading-preferences label {
+    gap: 8px;
+  }
+  .reader-session .word-reader .session-info {
+    margin-top: 12px;
   }
   .reader-session .reading-image {
     padding: 8px 20px 0;
