@@ -90,7 +90,7 @@ export default function App() {
   );
   return (
     <div
-      className="app-shell"
+      className={`app-shell${state.view === "reader" ? " reader-session" : ""}`}
       style={{ "--reading-scale": state.fontScale } as CSSProperties}
     >
       <header className="app-header">
