@@ -239,6 +239,11 @@ input[type="range"] {
 .explanation p {
   margin-top: 8px;
 }
+.example-sources a {
+  display: inline-block;
+  min-height: 44px;
+  padding: 8px 0;
+}
 .app-footer {
   padding: 24px 32px;
   color: #a1a9b6;

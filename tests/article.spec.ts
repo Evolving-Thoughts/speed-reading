@@ -73,6 +73,11 @@ test("previews the imported article, pauses for images and continues at the next
   await expect(
     page.getByRole("button", { name: "Text beenden" }),
   ).toBeInViewport();
+  await expect(
+    page.getByText("Bildpause · Mit „Weiterlesen“ setzt du den Text fort.", {
+      exact: true,
+    }),
+  ).toBeVisible();
   await page.clock.runFor(10000);
   await expect(
     page.getByRole("status", { name: "Wiedergabestatus" }),
@@ -95,6 +100,18 @@ test("previews the imported article, pauses for images and continues at the next
   ).toHaveText("Bildpause");
   await page.getByRole("button", { name: "Weiterlesen", exact: true }).click();
   await expect(page.getByRole("button", { name: "Von vorne" })).toBeVisible();
+  await expect(
+    page.getByRole("status", { name: "Wiedergabestatus" }),
+  ).toHaveText("Text beendet");
+  await expect(
+    page.getByText("Bildpause · Mit „Weiterlesen“ setzt du den Text fort.", {
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await expect(page.locator(".reading-image img")).toHaveAttribute(
+    "alt",
+    "Abschlussbild",
+  );
   await page.getByRole("button", { name: "Von vorne" }).click();
   await expect(page.getByTestId("reader-word")).toHaveAttribute(
     "aria-label",
@@ -221,4 +238,13 @@ test("the actual local API rejects internal URLs through the Vite proxy", async 
   });
   expect(result.status).toBe(400);
   expect(result.text).toContain("interne Adressen");
+});
+
+test("source link excludes its decorative arrow from the accessible name", async ({
+  page,
+}) => {
+  await prepare(page);
+  await expect(
+    page.getByRole("link", { name: "Quelle öffnen", exact: true }),
+  ).toBeVisible();
 });

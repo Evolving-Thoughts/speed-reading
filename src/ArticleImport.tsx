@@ -106,7 +106,7 @@ export function ArticleImport({
           <div className="eyebrow">ARTIKELVORSCHAU</div>
           <h2>{preview.title}</h2>
           <a href={preview.sourceUrl} target="_blank" rel="noreferrer">
-            Quelle öffnen ↗
+            Quelle öffnen <span aria-hidden="true">↗</span>
           </a>
           <p className="hint">
             {imageCount} {imageCount === 1 ? "Bild" : "Bilder"} erkannt · Inhalt

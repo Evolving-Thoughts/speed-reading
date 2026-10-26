@@ -16,8 +16,8 @@ import { ArticleImport } from "./ArticleImport";
 import { ArticleImage } from "./ArticleImage";
 import { countWords } from "./reader";
 
-const example =
-  "Manchmal braucht eine gute Idee keinen großen Plan. Es reicht, einen Gedanken festzuhalten und ihm ein Stück zu folgen.\n\nEin kurzer Text, ein ruhiger Moment. Wir lesen weiter und finden heraus, welche Richtung sich daraus ergibt.";
+import { exampleText, exampleSources } from "./example";
+
 export default function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const fullscreen = useFullscreen();
@@ -194,7 +194,7 @@ export default function App() {
                 <button
                   type="button"
                   className="text-button"
-                  onClick={() => dispatch({ type: "draft", text: example })}
+                  onClick={() => dispatch({ type: "draft", text: exampleText })}
                 >
                   Beispieltext laden
                 </button>
@@ -223,6 +223,23 @@ export default function App() {
                 Zur Leseansicht <span aria-hidden="true">→</span>
               </button>
             </form>
+            <details className="explanation example-sources">
+              <summary>Quellen zum Beispieltext</summary>
+              <p>
+                Der Beispieltext fasst Forschung zu RSVP und Lesen zusammen. Er
+                ist keine Übersetzung des Referenzvideos. Die Quellen werden
+                nicht als Teil des Beispieltexts angezeigt oder vorgelesen.
+              </p>
+              <ul>
+                {exampleSources.map((source) => (
+                  <li key={source.href}>
+                    <a href={source.href} target="_blank" rel="noreferrer">
+                      {source.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </details>
             <details className="explanation">
               <summary>Wie funktioniert dieser Lesemodus?</summary>
               <p>
@@ -240,7 +257,12 @@ export default function App() {
               Speedreading
             </h1>
             {image ? (
-              <ArticleImage key={image.src} image={image} reading />
+              <ArticleImage
+                key={image.src}
+                image={image}
+                reading
+                complete={state.complete}
+              />
             ) : (
               <ReaderWord
                 word={words[state.index]}

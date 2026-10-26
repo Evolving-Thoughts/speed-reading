@@ -4,10 +4,12 @@ export function ArticleImage({
   image,
   reading = false,
   inline = false,
+  complete = false,
 }: {
   image: ImageData;
   reading?: boolean;
   inline?: boolean;
+  complete?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
   const Wrapper = inline ? "span" : "figure";
@@ -32,7 +34,7 @@ export function ArticleImage({
       {image.caption && (
         <Caption className="image-caption">{image.caption}</Caption>
       )}
-      {reading && (
+      {reading && !complete && (
         <p className="hint">
           Bildpause · Mit „Weiterlesen“ setzt du den Text fort.
         </p>

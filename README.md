@@ -42,7 +42,7 @@ npm run preview
 
 ## Bedienung
 
-- Text einfügen oder den Beispieltext laden. Die kurze Erklärung unter der Texteingabe ist optional aufklappbar.
+- Text einfügen oder den deutschen Beispieltext „Dein Text. Dein Rhythmus.“ laden. Er erklärt RSVP, die Forschungsgrenzen, inneres Sprechen und sinnvolle Tempowahl ohne Leistungsversprechen. Die fünf Quellenlinks stehen separat unter „Quellen zum Beispieltext“ und werden nicht in den Wortstrom übernommen. Die Eingabe bleibt beim Start leer; Laden des Beispiels ist optional. Die kurze Bedienerklärung ist weiterhin aufklappbar.
 - Tempo zwischen 100 und 1.200 WPM wählen (Standard: 300), per Schieberegler oder Zahlenfeld. Das Zahlenfeld übernimmt mit Enter oder beim Verlassen den gerundeten Wert und begrenzt ihn auf den Bereich; eine leere/ungültige Eingabe wird zurückgesetzt. Enter im Zahlenfeld startet die Leseansicht nicht. Der Einstieg ist immer pausiert.
 - Start/Pause per Button oder Leertaste. In Eingabefeldern und auf nativen Bedienelementen behält die Leertaste ihre normale Bedeutung.
 - Jedes Wort erscheint um einen festen roten Ankerbuchstaben. Lange Wörter werden so verkleinert, dass sie nicht abgeschnitten werden.

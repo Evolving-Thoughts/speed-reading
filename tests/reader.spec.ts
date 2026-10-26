@@ -209,8 +209,8 @@ test("visual reference states", async ({ page }, info) => {
   });
   await page.getByRole("button", { name: "Zur Leseansicht" }).click();
   await page.getByRole("button", { name: "Textansicht", exact: true }).click();
-  await page.getByRole("button", { name: "Gedanken", exact: true }).dblclick();
-  await expect(word(page)).toHaveAttribute("aria-label", "Gedanken");
+  await page.getByRole("button", { name: "Serial", exact: true }).dblclick();
+  await expect(word(page)).toHaveAttribute("aria-label", "Serial");
   await page.screenshot({
     path: `test-results/${info.project.name}-reader.png`,
     fullPage: true,
@@ -326,4 +326,41 @@ test("navigates words with arrows and Home/End, then resumes from the selected w
   await expect(
     page.getByRole("status", { name: "Wiedergabestatus" }),
   ).toHaveText("Pausiert");
+});
+
+test("loads the approved German example with research sources outside the reading text", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const input = page.getByLabel("Was möchtest du lesen?");
+  await expect(input).toHaveValue("");
+  await page.getByRole("button", { name: "Beispieltext laden" }).click();
+  await expect(input).toHaveValue(/^Dein Text\. Dein Rhythmus\./);
+  await expect(input).toHaveValue(
+    /Versuche aber nicht, diese Stimme mit Gewalt abzustellen\./,
+  );
+  await expect(input).toHaveValue(
+    /Entscheidend ist, was du aus ihnen mitnimmst\.$/,
+  );
+  const text = await input.inputValue();
+  expect(text).not.toMatch(/https?:|\[\^|\*\*/);
+  await page.getByText("Quellen zum Beispieltext", { exact: true }).click();
+  await expect(
+    page.getByRole("link", {
+      name: "Rayner et al. (2016): Lesen und Speedreading",
+    }),
+  ).toHaveAttribute(
+    "href",
+    "https://journals.sagepub.com/doi/10.1177/1529100615623267",
+  );
+  await expect(page.locator(".example-sources a")).toHaveCount(5);
+  await page.getByRole("button", { name: "Zur Leseansicht" }).click();
+  await expect(word(page)).toHaveAttribute("aria-label", "Dein");
+  await expect(
+    page.getByRole("status", { name: "Wiedergabestatus" }),
+  ).toHaveText("Pausiert");
+  await page.getByRole("button", { name: "Text beenden" }).click();
+  await expect(input).toHaveValue(text);
+  await page.reload();
+  await expect(input).toHaveValue("");
 });
