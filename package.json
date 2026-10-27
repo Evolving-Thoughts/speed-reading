@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "build": "tsc --noEmit && vite build",
+    "build:pages": "tsc --noEmit && vite build --mode pages --base=/speed-reading/",
     "preview": "node server/index.mjs --preview",
     "test": "vitest run",
     "test:watch": "vitest",
