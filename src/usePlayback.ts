@@ -2,11 +2,25 @@ import { useEffect, useRef, type Dispatch } from "react";
 import { wordDuration } from "./reader";
 import type { Action, ReaderState } from "./state";
 
-/** Monotonic deadlines; late frames never skip unread words to catch up. */
+/**
+ * Drives the reader: advances words on monotonic deadlines (late frames never
+ * skip unread words to catch up) and pauses whenever the tab is hidden.
+ */
 export function usePlayback(state: ReaderState, dispatch: Dispatch<Action>) {
   const previous = useRef({ index: -1, wpm: 0, deadline: 0, playing: false });
+
   useEffect(() => {
-    if (!state.playing || state.words[state.index]?.image) {
+    const pauseWhenHidden = () => {
+      if (document.hidden) dispatch({ type: "pause" });
+    };
+    document.addEventListener("visibilitychange", pauseWhenHidden);
+    return () =>
+      document.removeEventListener("visibilitychange", pauseWhenHidden);
+  }, [dispatch]);
+
+  useEffect(() => {
+    const step = state.steps[state.index];
+    if (!state.playing || step?.kind !== "word") {
       previous.current.playing = false;
       return;
     }
@@ -18,11 +32,7 @@ export function usePlayback(state: ReaderState, dispatch: Dispatch<Action>) {
       prior.wpm === state.wpm;
     const deadline =
       (continuous ? Math.max(prior.deadline, now) : now) +
-      wordDuration(
-        state.words[state.index],
-        state.wpm,
-        state.sentenceEndFactor,
-      );
+      wordDuration(step, state.wpm, state.sentenceEndFactor);
     previous.current = {
       index: state.index,
       wpm: state.wpm,
@@ -46,7 +56,7 @@ export function usePlayback(state: ReaderState, dispatch: Dispatch<Action>) {
     state.index,
     state.wpm,
     state.sentenceEndFactor,
-    state.words,
+    state.steps,
     dispatch,
   ]);
 }

@@ -1,10 +1,10 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { characters, type Word } from "./reader";
+import { characters, type WordStep } from "./reader";
 export function ReaderWord({
   word,
   fontScale = 1,
 }: {
-  word: Word;
+  word: WordStep;
   fontScale?: number;
 }) {
   const viewport = useRef<HTMLDivElement>(null);

@@ -1,4 +1,4 @@
-import { tokenize, type Word } from "./reader";
+import { tokenize, type Step } from "./reader";
 export type ArticleImage = { src: string; alt: string; caption: string };
 export type Article = {
   title: string;
@@ -7,21 +7,17 @@ export type Article = {
     { type: "text"; text: string } | ({ type: "image" } & ArticleImage)
   )[];
 };
-export function articleSteps(article: Article): Word[] {
-  const steps: Word[] = [];
+export function articleSteps(article: Article): Step[] {
+  const steps: Step[] = [];
   for (const block of article.blocks) {
-    if (block.type === "text") {
-      const words = tokenize(block.text);
-      if (words.length && steps.length) words[0].leading = "\n\n";
-      steps.push(...words);
-    } else
-      steps.push({
-        text: "",
-        leading: "\n\n",
-        anchor: 0,
-        sentenceEnd: false,
-        image: { src: block.src, alt: block.alt, caption: block.caption },
-      });
+    if (block.type === "image") {
+      const { src, alt, caption } = block;
+      steps.push({ kind: "image", image: { src, alt, caption } });
+      continue;
+    }
+    const words = tokenize(block.text);
+    if (words.length && steps.length) words[0].leading = "\n\n";
+    steps.push(...words);
   }
   return steps;
 }

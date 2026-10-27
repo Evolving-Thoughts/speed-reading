@@ -1,10 +1,12 @@
 import { expect, it } from "vitest";
-import { initialState, reducer } from "./state";
+import { initialState, readerView, reducer, type ReaderState } from "./state";
+const stepTexts = (s: ReaderState) =>
+  s.steps.map((step) => (step.kind === "word" ? step.text : "[Bild]"));
 it("loads a nonempty text paused at the first word", () => {
   const input = reducer(initialState, { type: "draft", text: "Hallo Welt!" });
   const session = reducer(input, { type: "load" });
   expect(session.view).toBe("reader");
-  expect(session.words.map((w) => w.text)).toEqual(["Hallo", "Welt!"]);
+  expect(stepTexts(session)).toEqual(["Hallo", "Welt!"]);
   expect(session.index).toBe(0);
   expect(session.playing).toBe(false);
 });
@@ -110,8 +112,35 @@ it("pauses at an article image until explicit continuation, including consecutiv
   expect([s.index, s.playing]).toEqual([0, false]);
   s = reducer(s, { type: "finish" });
   s = reducer(s, { type: "load" });
-  expect(s.words.filter((w) => w.image)).toHaveLength(3);
+  expect(s.steps.filter((step) => step.kind === "image")).toHaveLength(3);
   s = reducer(s, { type: "draft", text: "Neuer Text" });
   s = reducer(s, { type: "load" });
-  expect(s.words.map((w) => w.text)).toEqual(["Neuer", "Text"]);
+  expect(stepTexts(s)).toEqual(["Neuer", "Text"]);
+});
+
+it("derives status and progress for the screens", () => {
+  let s = reducer(loaded(), { type: "toggle" });
+  expect(readerView(s)).toMatchObject({ status: "Läuft", progress: 33 });
+  expect(readerView(s).word?.text).toBe("Eins");
+  s = reducer(reducer(reducer(s, { type: "tick" }), { type: "tick" }), {
+    type: "tick",
+  });
+  expect(readerView(s)).toMatchObject({
+    status: "Text beendet",
+    progress: 100,
+  });
+  const article = reducer(initialState, {
+    type: "article",
+    article: {
+      title: "Artikel",
+      sourceUrl: "https://example.com",
+      blocks: [
+        { type: "image", src: "/api/image?token=x", alt: "Bild", caption: "" },
+      ],
+    },
+  });
+  expect(readerView(article)).toMatchObject({
+    status: "Bildpause",
+    word: null,
+  });
 });

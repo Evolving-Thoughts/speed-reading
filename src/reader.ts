@@ -1,11 +1,17 @@
 import type { ArticleImage } from "./article";
-export type Word = {
-  image?: ArticleImage;
+import { clampWpm } from "./settings";
+
+/** One reading step: a word shown around its anchor, or an image the reader pauses at. */
+export type WordStep = {
+  kind: "word";
   text: string;
   leading: string;
   anchor: number;
   sentenceEnd: boolean;
 };
+export type ImageStep = { kind: "image"; image: ArticleImage };
+export type Step = WordStep | ImageStep;
+
 const standalonePunctuation = /^\p{P}+$/u;
 const abbreviations = new Set([
   "z.b.",
@@ -22,9 +28,9 @@ function endsSentence(text: string): boolean {
   const bare = text.replace(/["'“”’»\)\]\}]+$/u, "");
   return /[.!?…]$/u.test(bare) && !abbreviations.has(bare.toLowerCase());
 }
-export function tokenize(text: string): Word[] {
+export function tokenize(text: string): WordStep[] {
   text = text.normalize("NFC");
-  const words: Word[] = [];
+  const words: WordStep[] = [];
   let end = 0;
   for (const match of text.matchAll(/\S+/gu)) {
     const value = match[0];
@@ -34,6 +40,7 @@ export function tokenize(text: string): Word[] {
       previous.sentenceEnd = endsSentence(previous.text);
     } else {
       words.push({
+        kind: "word",
         text: value,
         leading: text.slice(end, match.index),
         anchor: 0,
@@ -61,14 +68,11 @@ export function anchorIndex(text: string): number {
   return index;
 }
 export function wordDuration(
-  word: Word,
+  word: WordStep,
   wpm: number,
   sentenceEndFactor = 3,
 ): number {
-  return (
-    (60000 / Math.max(100, Math.min(1200, wpm))) *
-    (word.sentenceEnd ? sentenceEndFactor : 1)
-  );
+  return (60000 / clampWpm(wpm)) * (word.sentenceEnd ? sentenceEndFactor : 1);
 }
 
 /** Count reading steps without normalization, grapheme segmentation or word objects. */

@@ -4,6 +4,8 @@ Eine Speedreading-Web-App, die Texte Wort für Wort mit einem festen Ankerbuchst
 
 **Live ausprobieren:** <https://evolving-thoughts.github.io/speed-reading/>
 
+![Leseansicht mit hervorgehobenem Ankerbuchstaben](docs/screenshot.png)
+
 ## Funktionen
 
 - Text einfügen oder Beispieltext laden und mit 100 bis 1.200 Wörtern pro Minute lesen
@@ -56,7 +58,13 @@ Jeder Push auf `main` baut die App mit `npm run build:pages` und veröffentlicht
 
 ## Projektstruktur
 
-- `src/`: React-App (Lesemodus, Textansicht, Einstellungen, Zeitsteuerung)
+- `src/state.ts`: Lesesitzung (reducer und abgeleitete Anzeigewerte)
+- `src/screens/`: Eingabe-, Lese- und Textansicht
+- `src/`: weitere Module für Leseschritte, Einstellungen, Zeitsteuerung und Linkimport
 - `server/`: lokaler Importdienst für Artikel-Links
 - `tests/`: Playwright-Browsertests
 - `docs/details.md`: ausführliche Beschreibung von Bedienung, Importgrenzen und Datenschutz
+
+## Lizenz
+
+[MIT](LICENSE)
