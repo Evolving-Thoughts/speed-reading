@@ -106,7 +106,7 @@ export default function App() {
             speed <span>/</span> reading
           </a>
           <div className="header-actions">
-            {state.view === "input" && (
+            {state.view === "input" && articleImportEnabled && (
               <span className="privacy-label">Lokaler Importdienst.</span>
             )}
             <button
