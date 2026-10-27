@@ -18,6 +18,9 @@ import { countWords } from "./reader";
 
 import { exampleText, exampleSources } from "./example";
 
+// The link import needs the local Node.js service; static hosts (GitHub Pages) build without it.
+const articleImportEnabled = import.meta.env.VITE_ARTICLE_IMPORT !== "false";
+
 export default function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const fullscreen = useFullscreen();
@@ -179,10 +182,12 @@ export default function App() {
               <br />
               Eingefügter Text bleibt in diesem Browser-Tab.
             </p>
-            <ArticleImport
-              initialArticle={state.article}
-              onRead={(article) => dispatch({ type: "article", article })}
-            />
+            {articleImportEnabled && (
+              <ArticleImport
+                initialArticle={state.article}
+                onRead={(article) => dispatch({ type: "article", article })}
+              />
+            )}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
