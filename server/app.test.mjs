@@ -157,3 +157,150 @@ it("enforces the concurrent fetch cap after asynchronous request-body parsing", 
     await Promise.all(first);
   }
 });
+
+it("queues an image burst while keeping four shared outbound slots and rejecting excess article work", async () => {
+  let release;
+  const gate = new Promise((r) => {
+    release = r;
+  });
+  let imageCalls = 0;
+  let active = 0;
+  let peak = 0;
+  const base = await start({
+    fetcher: async (url, kind) => {
+      if (kind === "html")
+        return {
+          body: Buffer.from(
+            html.replace(
+              '<img src="/photo.png" alt="Foto">',
+              Array.from(
+                { length: 9 },
+                (_, i) => `<img src="/photo-${i}.png" alt="Bild ${i}">`,
+              ).join(""),
+            ),
+          ),
+          url,
+          type: "text/html",
+        };
+      imageCalls++;
+      active++;
+      peak = Math.max(peak, active);
+      try {
+        await gate;
+        return { body: Buffer.from([1, 2, 3]), url, type: "image/png" };
+      } finally {
+        active--;
+      }
+    },
+  });
+  const doc = await (await post(base, "https://example.com/article")).json();
+  const sources = doc.blocks
+    .filter((b) => b.type === "image")
+    .map((b) => b.src);
+  expect(new Set(sources).size).toBe(9);
+  const images = sources.map((src) => fetch(base + src));
+  try {
+    await vi.waitFor(() => expect(imageCalls).toBe(4));
+    expect((await post(base, "https://example.com/other")).status).toBe(429);
+  } finally {
+    release();
+  }
+  const responses = await Promise.all(images);
+  expect(responses.map((r) => r.status)).toEqual(Array(9).fill(200));
+  await Promise.all(responses.map((r) => r.arrayBuffer()));
+  expect(imageCalls).toBe(9);
+  expect(peak).toBe(4);
+});
+
+it("frees a failed outbound image slot so queued images still complete", async () => {
+  let release;
+  const gate = new Promise((r) => {
+    release = r;
+  });
+  let calls = 0;
+  const base = await start({
+    fetcher: async (url, kind) => {
+      if (kind === "html")
+        return { body: Buffer.from(html), url, type: "text/html" };
+      const call = ++calls;
+      await gate;
+      if (call === 1)
+        throw new ImportError("Bildquelle nicht erreichbar.", 502);
+      return { body: Buffer.from([1]), url, type: "image/png" };
+    },
+  });
+  const doc = await (await post(base, "https://example.com/article")).json();
+  const src = doc.blocks.find((b) => b.type === "image").src;
+  const requests = Array.from({ length: 6 }, () => fetch(base + src));
+  try {
+    await vi.waitFor(() => expect(calls).toBe(4));
+  } finally {
+    release();
+  }
+  const responses = await Promise.all(requests);
+  expect(responses.filter((r) => r.status === 200)).toHaveLength(5);
+  expect(responses.filter((r) => r.status === 502)).toHaveLength(1);
+  await Promise.all(responses.map((r) => r.arrayBuffer()));
+  expect(calls).toBe(6);
+});
+
+it("removes a disconnected queued image without fetching it or blocking later requests", async () => {
+  let release;
+  const gate = new Promise((r) => {
+    release = r;
+  });
+  const seen = [];
+  const base = await start({
+    fetcher: async (url, kind) => {
+      if (kind === "html")
+        return {
+          body: Buffer.from(
+            html.replace(
+              "</article>",
+              '<figure><img src="/cancelled.png" alt="Anderes Bild"></figure></article>',
+            ),
+          ),
+          url,
+          type: "text/html",
+        };
+      seen.push(url);
+      await gate;
+      return { body: Buffer.from([1]), url, type: "image/png" };
+    },
+  });
+  const doc = await (await post(base, "https://example.com/article")).json();
+  const images = doc.blocks.filter((b) => b.type === "image");
+  expect(images).toHaveLength(2);
+  const first = Array.from({ length: 4 }, () => fetch(base + images[0].src));
+  let requested = false;
+  let closed = false;
+  servers.at(-1).on("request", (req, res) => {
+    if (req.url === images[1].src) {
+      requested = true;
+      res.on("close", () => {
+        closed = true;
+      });
+    }
+  });
+  const controller = new AbortController();
+  let later;
+  try {
+    await vi.waitFor(() => expect(seen).toHaveLength(4));
+    const cancelled = fetch(base + images[1].src, {
+      signal: controller.signal,
+    }).catch((err) => err);
+    await vi.waitFor(() => expect(requested).toBe(true));
+    controller.abort();
+    expect((await cancelled).name).toBe("AbortError");
+    await vi.waitFor(() => expect(closed).toBe(true));
+    later = fetch(base + images[0].src);
+  } finally {
+    controller.abort();
+    release();
+  }
+  const responses = await Promise.all([...first, later]);
+  expect(responses.map((r) => r.status)).toEqual(Array(5).fill(200));
+  await Promise.all(responses.map((r) => r.arrayBuffer()));
+  expect(seen).toHaveLength(5);
+  expect(seen.every((url) => url.endsWith("/photo.png"))).toBe(true);
+});

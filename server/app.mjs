@@ -4,6 +4,7 @@ import { resolve, sep, extname } from "node:path";
 import { fetchPublic, validateUrl } from "./network.mjs";
 import { extractArticle, ImportError } from "./extract.mjs";
 import { imageTokens } from "./tokens.mjs";
+import { createFetchSlots } from "./fetch-slots.mjs";
 const mime = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -14,16 +15,8 @@ const mime = {
 };
 export function createApp({ fetcher = fetchPublic, serveDist = false } = {}) {
   const tokens = imageTokens();
-  let active = 0;
+  const slots = createFetchSlots();
   const rates = new Map();
-  const acquire = () => {
-    if (active >= 4)
-      throw new ImportError(
-        "Zu viele gleichzeitige Abrufe. Bitte kurz warten.",
-        429,
-      );
-    active++;
-  };
   const json = (res, status, data) => {
     res.writeHead(status, {
       "Content-Type": "application/json; charset=utf-8",
@@ -57,11 +50,6 @@ export function createApp({ fetcher = fetchPublic, serveDist = false } = {}) {
             throw new ImportError(
               "Diese Anfrage stammt nicht von der lokalen App.",
               403,
-            );
-          if (active >= 4)
-            throw new ImportError(
-              "Zu viele gleichzeitige Abrufe. Bitte kurz warten.",
-              429,
             );
           if (req.method === "POST" && url.pathname === "/api/article") {
             if (
@@ -98,7 +86,7 @@ export function createApp({ fetcher = fetchPublic, serveDist = false } = {}) {
             if (typeof data?.url !== "string")
               throw new ImportError("Bitte einen Link eingeben.", 400);
             const target = validateUrl(data.url.trim()).href;
-            acquire();
+            const release = slots.acquire();
             try {
               const response = await fetcher(target, "html", controller.signal);
               const doc = extractArticle(
@@ -110,14 +98,15 @@ export function createApp({ fetcher = fetchPublic, serveDist = false } = {}) {
               );
               json(res, 200, doc);
             } finally {
-              active--;
+              release();
             }
             return;
           }
           if (req.method === "GET" && url.pathname === "/api/image") {
             const target = tokens.read(url.searchParams.get("token"));
-            acquire();
+            const release = await slots.acquireImage(controller.signal);
             try {
+              if (controller.signal.aborted) return;
               const image = await fetcher(target, "image", controller.signal);
               res.writeHead(200, {
                 "Content-Type": image.type,
@@ -126,7 +115,7 @@ export function createApp({ fetcher = fetchPublic, serveDist = false } = {}) {
               });
               res.end(image.body);
             } finally {
-              active--;
+              release();
             }
             return;
           }
