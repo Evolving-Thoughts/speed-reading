@@ -608,6 +608,14 @@ input[type="range"] {
 }
 
 /* Reader-only layout: keep input and full-text views unchanged. */
+.reader-session main {
+  display: flex;
+  flex-direction: column;
+}
+.reader-session .reading-screen {
+  /* Positive free space is shared equally; short windows keep natural scrolling. */
+  margin-block: auto;
+}
 .reader-session .app-header {
   min-height: 64px;
   padding: 9px 24px;

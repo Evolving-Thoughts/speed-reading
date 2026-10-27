@@ -120,6 +120,56 @@ for (const [width, height] of [
   });
 }
 
+for (const [width, height] of [
+  [1440, 900],
+  [1366, 768],
+  [390, 844],
+  [375, 667],
+]) {
+  test(`centers the whole reader between header and footer at ${width}x${height}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto("/");
+    await page
+      .getByLabel("Was möchtest du lesen?")
+      .fill("Dein Text braucht Raum.");
+    await page.getByRole("button", { name: "Zur Leseansicht" }).click();
+    for (const scale of ["0.8", "1", "1.25", "1.5"]) {
+      await page.getByLabel("Schriftgröße").selectOption(scale);
+      const gaps = await page.locator(".reading-screen").evaluate((el) => {
+        const reader = el.getBoundingClientRect();
+        const header = document
+          .querySelector(".app-header")!
+          .getBoundingClientRect();
+        const footer = document
+          .querySelector(".app-footer")!
+          .getBoundingClientRect();
+        return {
+          top: reader.top - header.bottom,
+          bottom: footer.top - reader.bottom,
+        };
+      });
+      expect(Math.abs(gaps.top - gaps.bottom)).toBeLessThanOrEqual(2);
+      expect(gaps.top).toBeGreaterThanOrEqual(0);
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollHeight <= innerHeight + 1,
+        ),
+      ).toBe(true);
+    }
+    const before = await page.locator(".word-viewport").boundingBox();
+    await page.getByRole("button", { name: "Start", exact: true }).click();
+    await expect(page.getByTestId("reader-word")).not.toHaveAttribute(
+      "aria-label",
+      "Dein",
+    );
+    const during = await page.locator(".word-viewport").boundingBox();
+    expect(during!.y).toBeCloseTo(before!.y, 0);
+    expect(during!.height).toBeCloseTo(before!.height, 0);
+  });
+}
+
 const tallImage = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAMgAAAJYCAIAAACowz6jAAAGGUlEQVR4nO3UMQ2EABBFQSCIwwfl6aHEB2IwQIWFM8ELCZkR8LPFy47ndQ/wtOntA/gmYZEQFglhkRAWCWGREBYJYZEQFglhkRAWCWGREBYJYZEQFglhkRAWCWGREBYJYZEQFglhkRAWCWGREBYJYZEQFglhkRAWCWGREBYJYZEQFglhkRAWCWGREBYJYZEQFom5m162vRvnKcdvLWZ9LBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiISwSwiIhLBLCIiEsEsIiMZ7X/fYNfJCPRUJYJIRFQlgkhEVCWCSERUJYJIRFQlgkhEVCWCSERUJYJIRFQlgkhEVCWCSERUJYJIRFQlgkhEVCWCSERUJYJIRFQlgkhEVCWCSERUJYJIRFQlgkhEVCWCSERUJYJP7row0ZQGF5LgAAAABJRU5ErkJggg==",
   "base64",
@@ -178,5 +228,17 @@ for (const [width, height] of [
       ratio: 1,
     });
     await expect(page.locator(".session-info")).toBeInViewport({ ratio: 1 });
+    const gaps = await page.locator(".reading-screen").evaluate((el) => {
+      const reader = el.getBoundingClientRect();
+      return {
+        top:
+          reader.top -
+          document.querySelector(".app-header")!.getBoundingClientRect().bottom,
+        bottom:
+          document.querySelector(".app-footer")!.getBoundingClientRect().top -
+          reader.bottom,
+      };
+    });
+    expect(Math.abs(gaps.top - gaps.bottom)).toBeLessThanOrEqual(2);
   });
 }
