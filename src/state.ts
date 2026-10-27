@@ -1,9 +1,11 @@
-import { articleSteps, type Article } from "./article";
-import { tokenize, type Word } from "./reader";
+import { articleSteps, type Article, type ArticleImage } from "./article";
+import { tokenize, type Step, type WordStep } from "./reader";
+import { SPEED, clampWpm, isFontScale, isSentencePause } from "./settings";
+
 export type ReaderState = {
   article: Article | null;
   draft: string;
-  words: Word[];
+  steps: Step[];
   view: "input" | "reader" | "text";
   index: number;
   selected: number | null;
@@ -13,19 +15,21 @@ export type ReaderState = {
   fontScale: number;
   sentenceEndFactor: number;
 };
+
 export const initialState: ReaderState = {
   article: null,
   draft: "",
-  words: [],
+  steps: [],
   view: "input",
   index: 0,
   selected: null,
   playing: false,
   complete: false,
-  wpm: 300,
+  wpm: SPEED.initial,
   fontScale: 1,
   sentenceEndFactor: 3,
 };
+
 export type Action =
   | { type: "draft"; text: string }
   | { type: "article"; article: Article }
@@ -42,125 +46,130 @@ export type Action =
   | { type: "speed"; wpm: number }
   | { type: "fontScale"; value: number }
   | { type: "sentenceEndFactor"; value: number };
+
+/** Opens the reader paused at `index`; empty step lists leave the state unchanged. */
+function openReader(
+  state: ReaderState,
+  steps = state.steps,
+  index = 0,
+): ReaderState {
+  if (!steps.length) return state;
+  return {
+    ...state,
+    steps,
+    index,
+    view: "reader",
+    selected: null,
+    playing: false,
+    complete: false,
+  };
+}
+
+/** Moves to the next step; playback continues on words and stops at images and the end. */
+function advance(state: ReaderState): ReaderState {
+  const next = state.index + 1;
+  if (next >= state.steps.length)
+    return { ...state, playing: false, complete: true };
+  return { ...state, index: next, playing: state.steps[next].kind === "word" };
+}
+
+const isImageStep = (state: ReaderState) =>
+  state.steps[state.index]?.kind === "image";
+
+const validIndex = (state: ReaderState, index: number) =>
+  Number.isInteger(index) && index >= 0 && index < state.steps.length;
+
+const articleText = (article: Article) =>
+  article.blocks
+    .flatMap((b) => (b.type === "text" ? [b.text] : []))
+    .join("\n\n");
+
 export function reducer(state: ReaderState, action: Action): ReaderState {
-  if (action.type === "draft")
-    return { ...state, draft: action.text, article: null };
-  if (action.type === "article") {
-    const words = articleSteps(action.article);
-    return words.length
-      ? {
-          ...state,
-          article: action.article,
-          draft: action.article.blocks
-            .filter((b) => b.type === "text")
-            .map((b) => b.text)
-            .join("\n\n"),
-          words,
-          view: "reader",
-          index: 0,
-          selected: null,
-          playing: false,
-          complete: false,
-        }
-      : state;
-  }
-  if (action.type === "load") {
-    const words = state.article
-      ? articleSteps(state.article)
-      : tokenize(state.draft);
-    return words.length
-      ? {
-          ...state,
-          words,
-          view: "reader",
-          index: 0,
-          selected: null,
-          playing: false,
-          complete: false,
-        }
-      : state;
-  }
   switch (action.type) {
+    case "draft":
+      return { ...state, draft: action.text, article: null };
+    case "article": {
+      const opened = openReader(state, articleSteps(action.article));
+      return opened === state
+        ? state
+        : {
+            ...opened,
+            article: action.article,
+            draft: articleText(action.article),
+          };
+    }
+    case "load":
+      return openReader(
+        state,
+        state.article ? articleSteps(state.article) : tokenize(state.draft),
+      );
+    case "restart":
+      return openReader(state);
+    case "resume":
+      return validIndex(state, action.index)
+        ? openReader(state, state.steps, action.index)
+        : state;
     case "fontScale":
-      return [0.8, 1, 1.25, 1.5].includes(action.value)
+      return isFontScale(action.value)
         ? { ...state, fontScale: action.value }
         : state;
     case "sentenceEndFactor":
-      return [1, 2, 3, 4].includes(action.value)
+      return isSentencePause(action.value)
         ? { ...state, sentenceEndFactor: action.value }
         : state;
     case "speed":
       return Number.isFinite(action.wpm)
-        ? {
-            ...state,
-            wpm: Math.max(100, Math.min(1200, Math.round(action.wpm))),
-          }
+        ? { ...state, wpm: clampWpm(action.wpm) }
         : state;
-    case "continueImage":
-      if (
-        state.view !== "reader" ||
-        !state.words[state.index]?.image ||
-        state.complete
-      )
-        return state;
-      return state.index < state.words.length - 1
-        ? {
-            ...state,
-            index: state.index + 1,
-            playing: !state.words[state.index + 1].image,
-          }
-        : { ...state, playing: false, complete: true };
     case "toggle":
-      return state.view === "reader" &&
-        !state.complete &&
-        !state.words[state.index]?.image
+      return state.view === "reader" && !state.complete && !isImageStep(state)
         ? { ...state, playing: !state.playing }
+        : state;
+    case "tick":
+      return state.playing && state.view === "reader" ? advance(state) : state;
+    case "continueImage":
+      return state.view === "reader" && isImageStep(state) && !state.complete
+        ? advance(state)
         : state;
     case "pause":
       return { ...state, playing: false };
-    case "tick":
-      if (!state.playing || state.view !== "reader") return state;
-      return state.index < state.words.length - 1
-        ? {
-            ...state,
-            index: state.index + 1,
-            playing: !state.words[state.index + 1].image,
-          }
-        : { ...state, playing: false, complete: true };
     case "text":
-      return state.words.length
+      return state.steps.length
         ? { ...state, view: "text", playing: false, selected: state.index }
         : state;
     case "select":
       return state.view === "text" && validIndex(state, action.index)
         ? { ...state, selected: action.index }
         : state;
-    case "resume":
-      return validIndex(state, action.index)
-        ? {
-            ...state,
-            index: action.index,
-            view: "reader",
-            playing: false,
-            complete: false,
-            selected: null,
-          }
-        : state;
     case "finish":
       return { ...state, view: "input", playing: false, selected: null };
-    case "restart":
-      return state.words.length
-        ? {
-            ...state,
-            view: "reader",
-            index: 0,
-            playing: false,
-            complete: false,
-            selected: null,
-          }
-        : state;
   }
 }
-function validIndex(state: ReaderState, index: number): boolean {
-  return Number.isInteger(index) && index >= 0 && index < state.words.length;
+
+export type ReaderView = {
+  word: WordStep | null;
+  image: ArticleImage | null;
+  status: "Text beendet" | "Bildpause" | "Läuft" | "Pausiert";
+  /** Rounded percentage of steps reached, including the current one. */
+  progress: number;
+};
+
+/** Everything the screens display about the current position, derived in one place. */
+export function readerView(state: ReaderState): ReaderView {
+  const step = state.steps[state.index];
+  const image = step?.kind === "image" ? step.image : null;
+  return {
+    word: step?.kind === "word" ? step : null,
+    image,
+    status: state.complete
+      ? "Text beendet"
+      : image
+        ? "Bildpause"
+        : state.playing
+          ? "Läuft"
+          : "Pausiert",
+    progress: state.steps.length
+      ? Math.round(((state.index + 1) / state.steps.length) * 100)
+      : 0,
+  };
 }

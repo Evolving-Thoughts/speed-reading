@@ -7,11 +7,11 @@ import {
   type RefObject,
 } from "react";
 import { ArticleImage } from "./ArticleImage";
-import type { Word } from "./reader";
+import type { Step } from "./reader";
 import type { Action } from "./state";
 
 type Props = {
-  words: Word[];
+  steps: Step[];
   index: number;
   selected: number | null;
   dispatch: Dispatch<Action>;
@@ -29,7 +29,7 @@ function wordButton(
 
 /** Native word buttons with delegated events and one roving keyboard tab stop. */
 export const NormalText = memo(function NormalText({
-  words,
+  steps,
   index,
   selected,
   dispatch,
@@ -58,13 +58,13 @@ export const NormalText = memo(function NormalText({
         next = Math.max(0, current - 1);
         break;
       case "ArrowRight":
-        next = Math.min(words.length - 1, current + 1);
+        next = Math.min(steps.length - 1, current + 1);
         break;
       case "Home":
         next = 0;
         break;
       case "End":
-        next = words.length - 1;
+        next = steps.length - 1;
         break;
       default:
         return; // Keep native Enter/Space activation and Tab navigation.
@@ -97,22 +97,22 @@ export const NormalText = memo(function NormalText({
         onDoubleClick={resumeWord}
         onKeyDown={navigateWords}
       >
-        {words.map((word, wordIndex) => (
+        {steps.map((step, wordIndex) => (
           <Fragment key={wordIndex}>
-            {word.leading}
+            {step.kind === "word" ? step.leading : "\n\n"}
             <button
               type="button"
               data-word-index={wordIndex}
               tabIndex={wordIndex === activeIndex ? 0 : -1}
-              className={`${word.image ? "text-image" : "text-word"} ${wordIndex === index ? "current" : ""} ${wordIndex === selected ? "selected" : ""}`}
+              className={`${step.kind === "image" ? "text-image" : "text-word"} ${wordIndex === index ? "current" : ""} ${wordIndex === selected ? "selected" : ""}`}
               ref={wordIndex === index ? currentWordRef : undefined}
               aria-pressed={wordIndex === selected}
               aria-current={wordIndex === index ? "location" : undefined}
             >
-              {word.image ? (
-                <ArticleImage key={word.image.src} image={word.image} inline />
+              {step.kind === "image" ? (
+                <ArticleImage key={step.image.src} image={step.image} inline />
               ) : (
-                word.text
+                step.text
               )}
             </button>
           </Fragment>

@@ -16,15 +16,13 @@ it("keeps an image between its surrounding words without reading the caption as 
     ],
   };
   const steps = articleSteps(doc);
-  expect(steps.map((w) => (w.image ? "[Bild]" : w.text))).toEqual([
-    "Hallo",
-    "Welt.",
-    "[Bild]",
-    "Weiter",
-    "geht",
-    "es.",
-  ]);
-  expect(steps[2].image?.caption).toBe("Bildunterschrift");
+  expect(
+    steps.map((step) => (step.kind === "image" ? "[Bild]" : step.text)),
+  ).toEqual(["Hallo", "Welt.", "[Bild]", "Weiter", "geht", "es."]);
+  const image = steps[2];
+  expect(image.kind === "image" && image.image.caption).toBe(
+    "Bildunterschrift",
+  );
 });
 import { isArticle } from "./article";
 it("rejects executable source links and images not served by the local signed image endpoint", () => {

@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { isArticle, type Article } from "./article";
 import { ArticleImage } from "./ArticleImage";
+
+/** The link import needs the local Node.js service; static builds (GitHub Pages) ship without it. */
+export const articleImportAvailable =
+  import.meta.env.VITE_ARTICLE_IMPORT !== "false";
+
 export function ArticleImport({
   initialArticle,
   onRead,

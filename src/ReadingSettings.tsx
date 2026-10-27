@@ -1,5 +1,6 @@
 import { useEffect, useState, type Dispatch } from "react";
 import type { Action, ReaderState } from "./state";
+import { FONT_SCALES, SENTENCE_PAUSES, SPEED, clampWpm } from "./settings";
 
 type Props = Pick<ReaderState, "wpm" | "fontScale" | "sentenceEndFactor"> & {
   dispatch: Dispatch<Action>;
@@ -20,7 +21,7 @@ export function ReadingSettings({
       setSpeedDraft(String(wpm));
       return;
     }
-    const value = Math.max(100, Math.min(1200, Math.round(parsed)));
+    const value = clampWpm(parsed);
     dispatch({ type: "speed", wpm: value });
     setSpeedDraft(String(value));
   };
@@ -34,8 +35,8 @@ export function ReadingSettings({
             className="speed-number"
             aria-label="Tempo in Wörtern pro Minute"
             aria-describedby="speed-bounds"
-            min="100"
-            max="1200"
+            min={SPEED.min}
+            max={SPEED.max}
             step="1"
             value={speedDraft}
             onChange={(e) => setSpeedDraft(e.target.value)}
@@ -54,8 +55,8 @@ export function ReadingSettings({
       <input
         id="speed"
         type="range"
-        min="100"
-        max="1200"
+        min={SPEED.min}
+        max={SPEED.max}
         step="1"
         value={wpm}
         onChange={(e) =>
@@ -63,8 +64,8 @@ export function ReadingSettings({
         }
       />
       <div className="range-labels" id="speed-bounds">
-        <span>100</span>
-        <span>1.200</span>
+        <span>{SPEED.min.toLocaleString("de-DE")}</span>
+        <span>{SPEED.max.toLocaleString("de-DE")}</span>
       </div>
       <div className="reading-preferences">
         <label htmlFor="font-scale">
@@ -76,10 +77,11 @@ export function ReadingSettings({
               dispatch({ type: "fontScale", value: Number(e.target.value) })
             }
           >
-            <option value="0.8">Klein</option>
-            <option value="1">Normal</option>
-            <option value="1.25">Groß</option>
-            <option value="1.5">Sehr groß</option>
+            {FONT_SCALES.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </label>
         <label htmlFor="sentence-pause">
@@ -94,10 +96,11 @@ export function ReadingSettings({
               })
             }
           >
-            <option value="1">Aus · 1×</option>
-            <option value="2">Kurz · 2×</option>
-            <option value="3">Normal · 3×</option>
-            <option value="4">Lang · 4×</option>
+            {SENTENCE_PAUSES.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label} · {option.value}×
+              </option>
+            ))}
           </select>
         </label>
       </div>
