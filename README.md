@@ -4,6 +4,8 @@ Eine Speedreading-Web-App, die Texte Wort für Wort mit einem festen Ankerbuchst
 
 **Live ausprobieren:** <https://evolving-thoughts.github.io/speed-reading/>
 
+![Leseansicht mit hervorgehobenem Ankerbuchstaben](docs/screenshot.png)
+
 ## Funktionen
 
 - Text einfügen oder Beispieltext laden und mit 100 bis 1.200 Wörtern pro Minute lesen
