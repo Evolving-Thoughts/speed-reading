@@ -12,6 +12,9 @@ const screens = {
   text: TextScreen,
 };
 
+// The link import needs the local Node.js service; static hosts (GitHub Pages) build without it.
+const articleImportEnabled = import.meta.env.VITE_ARTICLE_IMPORT !== "false";
+
 export default function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
   usePlayback(state, dispatch);
