@@ -92,14 +92,16 @@ Browsertests prüfen Bedienabläufe, Timing mit kontrollierter Browser-Uhr, Wort
 
 - `server/`: Artikelparser, abgesicherter HTTP-Abruf, signierte Bildlinks und lokale API/static server.
 - `scripts/dev.mjs`: gemeinsamer Start und Stopp von Vite/API.
-- `src/ArticleImport.tsx`, `src/ArticleImage.tsx`, `src/article.ts`: Vorschau, Bildschritte und API-Datenvalidierung.
-- `src/reader.ts`: Textaufbereitung, Anker, Wortdauer.
-- `src/state.ts`: pure Zustandsübergänge der Sitzung.
-- `src/usePlayback.ts`: monotone Zeitsteuerung und Timer-Cleanup.
+- `src/state.ts`: Lesesitzung als reducer (pure Zustandsübergänge) und `readerView` für die abgeleiteten Anzeigewerte (Status, Fortschritt, aktueller Schritt).
+- `src/settings.ts`: Grenzen und Optionen der Leseeinstellungen (Tempo, Schriftgröße, Satzendpause).
+- `src/reader.ts`: Leseschritte (`Step`: Wort oder Bild), Textaufbereitung, Anker, Wortdauer.
+- `src/usePlayback.ts`: monotone Zeitsteuerung, Timer-Cleanup und Pause bei ausgeblendetem Tab.
+- `src/App.tsx`: wählt den Screen zur aktuellen Ansicht.
+- `src/screens/`: Eingabe-, Lese- und Textansicht; die Leseansicht enthält die Leertasten-Steuerung.
+- `src/AppHeader.tsx`, `src/useFullscreen.ts`: Kopfzeile und native Fullscreen API mit Statusabgleich und Fehlerhinweis.
+- `src/ArticleImport.tsx`, `src/ArticleImage.tsx`, `src/article.ts`: Linkimport inklusive Verfügbarkeit, Vorschau, Bildschritte und API-Datenvalidierung.
 - `src/ReaderWord.tsx`: Ankerposition und Größenanpassung.
-- `src/ReadingSettings.tsx`: Tempoeingabe, Basis-Schriftgröße und Satzendpause.
-- `src/useFullscreen.ts`: native Fullscreen API mit Statusabgleich und Fehlerhinweis.
-- `src/App.tsx`: Eingabe, Lesemodus, Textansicht und Tastaturbedienung.
+- `src/ReadingSettings.tsx`: Eingabe der Leseeinstellungen.
 - `src/NormalText.tsx`: delegierte Wortauswahl mit einer roving Tab-Position und Pfeiltastennavigation.
 
 Die App rendert Nutzereingaben als React-Text, niemals als HTML. Sie lädt keine externen Fonts oder Analytik. Externe Artikel und Bilder werden nur beim ausdrücklich ausgelösten Linkimport über den lokalen Importdienst geladen. Die Infrastruktur des später gewählten Hosts kann unabhängig davon Zugriffslogs erzeugen.

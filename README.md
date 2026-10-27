@@ -56,7 +56,13 @@ Jeder Push auf `main` baut die App mit `npm run build:pages` und veröffentlicht
 
 ## Projektstruktur
 
-- `src/`: React-App (Lesemodus, Textansicht, Einstellungen, Zeitsteuerung)
+- `src/state.ts`: Lesesitzung (reducer und abgeleitete Anzeigewerte)
+- `src/screens/`: Eingabe-, Lese- und Textansicht
+- `src/`: weitere Module für Leseschritte, Einstellungen, Zeitsteuerung und Linkimport
 - `server/`: lokaler Importdienst für Artikel-Links
 - `tests/`: Playwright-Browsertests
 - `docs/details.md`: ausführliche Beschreibung von Bedienung, Importgrenzen und Datenschutz
+
+## Lizenz
+
+[MIT](LICENSE)
