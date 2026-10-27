@@ -4,8 +4,7 @@ export type Article = {
   title: string;
   sourceUrl: string;
   blocks: (
-    | { type: "text"; text: string }
-    | ({ type: "image" } & ArticleImage)
+    { type: "text"; text: string } | ({ type: "image" } & ArticleImage)
   )[];
 };
 export function articleSteps(article: Article): Step[] {
