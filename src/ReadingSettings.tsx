@@ -103,8 +103,8 @@ export function ReadingSettings({
       </div>
       <p className="hint">
         {sentenceEndFactor === 1
-          ? "Keine zusätzliche Pause am Satzende."
-          : `Satzendwörter stehen insgesamt ${sentenceEndFactor}× so lange wie normale Wörter.`}
+          ? "Satzenddauer: wie bei normalen Wörtern."
+          : `Satzenddauer: ${sentenceEndFactor}× normale Wortdauer.`}
       </p>
     </div>
   );

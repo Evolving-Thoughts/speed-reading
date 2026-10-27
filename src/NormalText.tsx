@@ -6,6 +6,7 @@ import {
   type MouseEvent,
   type RefObject,
 } from "react";
+import { ArticleImage } from "./ArticleImage";
 import type { Word } from "./reader";
 import type { Action } from "./state";
 
@@ -103,12 +104,16 @@ export const NormalText = memo(function NormalText({
               type="button"
               data-word-index={wordIndex}
               tabIndex={wordIndex === activeIndex ? 0 : -1}
-              className={`text-word ${wordIndex === index ? "current" : ""} ${wordIndex === selected ? "selected" : ""}`}
+              className={`${word.image ? "text-image" : "text-word"} ${wordIndex === index ? "current" : ""} ${wordIndex === selected ? "selected" : ""}`}
               ref={wordIndex === index ? currentWordRef : undefined}
               aria-pressed={wordIndex === selected}
               aria-current={wordIndex === index ? "location" : undefined}
             >
-              {word.text}
+              {word.image ? (
+                <ArticleImage key={word.image.src} image={word.image} inline />
+              ) : (
+                word.text
+              )}
             </button>
           </Fragment>
         ))}

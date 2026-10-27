@@ -6,7 +6,7 @@ import type { Action, ReaderState } from "./state";
 export function usePlayback(state: ReaderState, dispatch: Dispatch<Action>) {
   const previous = useRef({ index: -1, wpm: 0, deadline: 0, playing: false });
   useEffect(() => {
-    if (!state.playing) {
+    if (!state.playing || state.words[state.index]?.image) {
       previous.current.playing = false;
       return;
     }
