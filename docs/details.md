@@ -40,6 +40,40 @@ npm run preview
 - Bilder werden über lokal signierte, eine Stunde gültige URLs abgerufen, nicht direkt im Browser von Drittseiten. JPEG, PNG, WebP, GIF und AVIF sind erlaubt; kein SVG/HTML. Bei nicht erreichbaren oder abgelaufenen Bildern kann trotzdem weitergelesen werden; bei Bedarf den Artikel neu importieren. Ein Serverneustart macht bestehende Bildlinks ungültig.
 - Artikel-URLs und deren Freigabeparameter werden nicht protokolliert oder dauerhaft gespeichert. Die Zielwebsite/Bildquelle sieht jedoch den Abruf und die IP des Importdienstes und kann eigene Zugriffslogs führen. Die Browseranzeige enthält den Quellenlink; Bilddaten können kurz im privaten Browsercache liegen. Keine externen KI-/Scraping-Dienste.
 
+## Browser-Erweiterung
+
+```sh
+npm run build:extension
+```
+
+baut die Erweiterung nach `dist-extension/`. In `chrome://extensions` (bzw. `edge://extensions`, `brave://extensions`) den Entwicklermodus einschalten und den Ordner über „Entpackte Erweiterung laden“ auswählen. Nach einem neuen Build dort „Aktualisieren“ wählen.
+
+1. Auf einer beliebigen Webseite das Symbol in der Symbolleiste anklicken, `Alt+Umschalt+S` drücken (änderbar unter `chrome://extensions/shortcuts`) oder im Kontextmenü „Mit Speed Reading lesen“ wählen.
+2. Die Leseansicht erscheint pausiert über der Seite. Bedienung, Textansicht, Bildpausen und Vollbild entsprechen der Web-App. Im Kopf steht der erkannte Titel, im Fuß die Quelle des Textes.
+3. „Schließen“, `Esc` oder ein erneuter Klick auf das Symbol beendet die Leseansicht. Scrollposition und Inhalt der Seite bleiben unverändert.
+
+Was gelesen wird:
+
+- **Markierter Text**, wenn mindestens fünf Wörter markiert sind, inklusive der Bilder in der Markierung. Kürzere Markierungen gelten als versehentlich.
+- Sonst der **Artikel der Seite**. Mozilla Readability erkennt ihn im bereits geladenen Dokument. Teilt die Seite den Artikel in mehrere Abschnitte (zum Beispiel um eine Anzeige) und kennzeichnet ihn mit `<article>`, wird der Fließtext dieses Elements gelesen, wenn er deutlich vollständiger ist.
+- Findet sich kein Artikel, der **sichtbare Text** der Seite ohne Navigation, Seitenleisten, Fußzeilen, Formulare sowie versteckte oder fixierte Elemente.
+
+Bilder werden so übernommen, wie die Seite sie anzeigt (inklusive `srcset`, `picture` und Lazy Loading), höchstens 50 pro Text. Symbole, Avatare und Zählpixel (schmaler als 100 px oder niedriger als 50 px) entfallen. Bildunterschriften werden angezeigt, aber nicht gelesen.
+
+Grenzen:
+
+- Browser-eigene Seiten (`chrome://…`), der Erweiterungs-Store und der eingebaute PDF-Betrachter lassen keine Erweiterungen zu. Das Symbol zeigt dann ein „!“.
+- Gelesen wird nur, was im Hauptdokument steht: keine eingebetteten Frames, keine Canvas-Oberflächen (zum Beispiel Google Docs) und kein Inhalt hinter einer Paywall, den die Seite nicht ausliefert.
+- Die Erkennung ist eine Heuristik. Fehlt etwas oder ist etwas zu viel, den gewünschten Text markieren und erneut starten.
+- Höchstens 250.000 Zeichen pro Text; für längere Seiten einen Abschnitt markieren.
+- Getestet mit Chromium. Firefox und Safari brauchen ein angepasstes Manifest und sind nicht geprüft.
+
+Technik und Datenschutz:
+
+- Berechtigungen: `activeTab` und `scripting` (Zugriff nur auf den Tab, in dem die Erweiterung gestartet wird), `storage` (Tempo, Schriftgröße, Satzendpause lokal im Browser) und `contextMenus`. Kein dauerhafter Zugriff auf Webseiten, keine Netzwerkanfragen der Erweiterung, keine Analytik.
+- Die Leseansicht liegt in einem Shadow DOM in einem modalen `<dialog>`. Seitenstile wirken nicht hinein, die Seite dahinter ist währenddessen nicht bedienbar, und Tastendrücke erreichen die Tastenkürzel der Seite nicht. Das funktioniert auch unter einer strengen Content Security Policy.
+- Der Seitentext wird als React-Text gerendert, niemals als HTML. Bilder lädt der Browser wie die Seite selbst, mit deren Referrer-Regeln.
+
 ## Bedienung
 
 - Die Leseansicht nutzt weniger Leerraum und eine an die gewählte Schriftgröße angepasste Lesefläche. Am Desktop stehen Tempo, Schriftgröße und Satzendpause nebeneinander; auf dem Smartphone sind sie platzsparend angeordnet. Das kleinere Wortfeld schafft mehr Abstand zwischen Aktionen, Einstellungen und Fortschrittsangabe, ohne die Schriftgröße zu reduzieren. Die gesamte Leseoberfläche ist zwischen Kopf- und Fußzeile vertikal zentriert; freier Platz verteilt sich gleichmäßig darüber und darunter. Bei üblichen Fenstergrößen bleiben Lesefeld und Steuerung gemeinsam sichtbar. Sehr kleine Fenster, starker Zoom oder lange Bildunterschriften dürfen weiterhin scrollen, statt Inhalte oder Bedienelemente abzuschneiden.
@@ -75,6 +109,7 @@ npm run typecheck        # TypeScript
 npm run build            # Typecheck und Produktions-Bundle
 npm run format:check     # Prettier
 npx playwright install chromium
+npm run build:extension  # die Erweiterungstests laden dist-extension/
 npm run test:e2e         # Desktop und Smartphone-Viewport in Chromium
 ```
 
@@ -91,6 +126,9 @@ Browsertests prüfen Bedienabläufe, Timing mit kontrollierter Browser-Uhr, Wort
 ## Aufbau
 
 - `server/`: Artikelparser, abgesicherter HTTP-Abruf, signierte Bildlinks und lokale API/static server.
+- `extension/extract.ts`: Texterkennung im geladenen Dokument (Markierung, Readability, sichtbarer Seitentext); das Gegenstück zu `server/extract.mjs`.
+- `extension/content.tsx`, `extension/Overlay.tsx`: Einblenden der Leseansicht auf der Seite und die Lesesitzung darin; `extension/background.ts` startet sie im aktiven Tab.
+- `scripts/build-extension.mjs`: baut Content-Script und Service Worker als je eine eigenständige Datei.
 - `scripts/dev.mjs`: gemeinsamer Start und Stopp von Vite/API.
 - `src/state.ts`: Lesesitzung als reducer (pure Zustandsübergänge) und `readerView` für die abgeleiteten Anzeigewerte (Status, Fortschritt, aktueller Schritt).
 - `src/settings.ts`: Grenzen und Optionen der Leseeinstellungen (Tempo, Schriftgröße, Satzendpause).
@@ -98,7 +136,7 @@ Browsertests prüfen Bedienabläufe, Timing mit kontrollierter Browser-Uhr, Wort
 - `src/usePlayback.ts`: monotone Zeitsteuerung, Timer-Cleanup und Pause bei ausgeblendetem Tab.
 - `src/App.tsx`: wählt den Screen zur aktuellen Ansicht.
 - `src/screens/`: Eingabe-, Lese- und Textansicht; die Leseansicht enthält die Leertasten-Steuerung.
-- `src/AppHeader.tsx`, `src/useFullscreen.ts`: Kopfzeile und native Fullscreen API mit Statusabgleich und Fehlerhinweis.
+- `src/AppHeader.tsx`, `src/useFullscreen.ts`: Kopfzeile (von Web-App und Erweiterung genutzt) und native Fullscreen API mit Statusabgleich und Fehlerhinweis.
 - `src/ArticleImport.tsx`, `src/ArticleImage.tsx`, `src/article.ts`: Linkimport inklusive Verfügbarkeit, Vorschau, Bildschritte und API-Datenvalidierung.
 - `src/ReaderWord.tsx`: Ankerposition und Größenanpassung.
 - `src/ReadingSettings.tsx`: Eingabe der Leseeinstellungen.

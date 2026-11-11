@@ -1,5 +1,6 @@
 import { useReducer, type CSSProperties } from "react";
 import { AppHeader } from "./AppHeader";
+import { articleImportAvailable } from "./ArticleImport";
 import { InputScreen } from "./screens/InputScreen";
 import { ReaderScreen } from "./screens/ReaderScreen";
 import { TextScreen } from "./screens/TextScreen";
@@ -22,8 +23,29 @@ export default function App() {
       style={{ "--reading-scale": state.fontScale } as CSSProperties}
     >
       <AppHeader
-        view={state.view}
-        onFinish={() => dispatch({ type: "finish" })}
+        brand={
+          <a
+            className="brand"
+            href="#main"
+            aria-label="Speed Reading – zum Inhalt"
+          >
+            speed <span>/</span> reading
+          </a>
+        }
+        note={
+          state.view === "input" &&
+          articleImportAvailable && (
+            <span className="privacy-label">Lokaler Importdienst.</span>
+          )
+        }
+        finish={
+          state.view === "input"
+            ? undefined
+            : {
+                label: "Text beenden",
+                onClick: () => dispatch({ type: "finish" }),
+              }
+        }
       />
       <main id="main">
         <Screen state={state} dispatch={dispatch} />

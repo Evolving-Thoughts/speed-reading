@@ -15,9 +15,12 @@ export function ReaderScreen({ state, dispatch }: Props) {
   const total = state.steps.length;
 
   // Space toggles playback unless a control or text field keeps its native meaning.
+  // Listening on the root node also works inside a shadow tree (browser extension).
   useEffect(() => {
     if (state.complete) return;
-    const onKeyDown = (event: KeyboardEvent) => {
+    const root = heading.current?.getRootNode() ?? document;
+    const onKeyDown = (event: Event) => {
+      if (!(event instanceof KeyboardEvent)) return;
       const modified =
         event.altKey || event.ctrlKey || event.metaKey || event.shiftKey;
       if (event.code !== "Space" || event.repeat || modified) return;
@@ -25,8 +28,8 @@ export function ReaderScreen({ state, dispatch }: Props) {
       event.preventDefault();
       dispatch({ type: "toggle" });
     };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    root.addEventListener("keydown", onKeyDown);
+    return () => root.removeEventListener("keydown", onKeyDown);
   }, [state.complete, dispatch]);
 
   return (
