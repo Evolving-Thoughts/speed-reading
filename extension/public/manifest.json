@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Speed Reading",
+  "description": "Liest den Artikel oder markierten Text der aktuellen Seite Wort für Wort – direkt auf der Seite, ohne Kopieren, Konto oder Tracking.",
+  "version": "0.1.0",
+  "minimum_chrome_version": "111",
+  "permissions": ["activeTab", "scripting", "storage", "contextMenus"],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_title": "Seite mit Speed Reading lesen",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": { "default": "Alt+Shift+S" },
+      "description": "Seite oder markierten Text mit Speed Reading lesen"
+    }
+  }
+}

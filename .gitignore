@@ -1,6 +1,12 @@
 node_modules/
 dist/
+dist-extension/
 test-results/
 playwright-report/
 *.local
 .DS_Store
+
+# Impeccable design tooling (reinstall: npx impeccable install --project --providers=claude)
+.claude/settings.local.json
+.claude/skills/impeccable/
+.claude/agents/impeccable-*.md

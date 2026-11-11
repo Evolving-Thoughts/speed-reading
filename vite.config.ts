@@ -7,5 +7,11 @@ export default defineConfig({
       "/api": { target: `http://127.0.0.1:${process.env.API_PORT || 4174}` },
     },
   },
-  test: { include: ["src/**/*.test.ts", "server/**/*.test.mjs"] },
+  test: {
+    include: [
+      "src/**/*.test.ts",
+      "extension/**/*.test.ts",
+      "server/**/*.test.mjs",
+    ],
+  },
 });

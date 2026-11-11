@@ -1,28 +1,25 @@
-import { articleImportAvailable } from "./ArticleImport";
+import type { ReactNode } from "react";
 import { useFullscreen } from "./useFullscreen";
 
-type Props = { view: "input" | "reader" | "text"; onFinish: () => void };
+/** Shared by the web app and the browser extension; each brings its own brand and exit. */
+type Props = {
+  brand: ReactNode;
+  note?: ReactNode;
+  finish?: { label: string; onClick: () => void };
+};
 
 const UNSUPPORTED = "Vollbild wird in diesem Browser nicht unterstützt.";
 
-export function AppHeader({ view, onFinish }: Props) {
+export function AppHeader({ brand, note, finish }: Props) {
   const fullscreen = useFullscreen();
   const label = fullscreen.active ? "Vollbild verlassen" : "Vollbild starten";
   const notice = fullscreen.supported ? fullscreen.error : UNSUPPORTED;
   return (
     <header className="app-header">
       <div className="header-main">
-        <a
-          className="brand"
-          href="#main"
-          aria-label="Speed Reading – zum Inhalt"
-        >
-          speed <span>/</span> reading
-        </a>
+        {brand}
         <div className="header-actions">
-          {view === "input" && articleImportAvailable && (
-            <span className="privacy-label">Lokaler Importdienst.</span>
-          )}
+          {note}
           <button
             className="button fullscreen-button"
             disabled={!fullscreen.supported || fullscreen.busy}
@@ -52,9 +49,9 @@ export function AppHeader({ view, onFinish }: Props) {
               {fullscreen.active ? "Vollbild verlassen" : "Vollbild"}
             </span>
           </button>
-          {view !== "input" && (
-            <button className="button end-button" onClick={onFinish}>
-              Text beenden
+          {finish && (
+            <button className="button end-button" onClick={finish.onClick}>
+              {finish.label}
             </button>
           )}
         </div>

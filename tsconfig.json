@@ -9,7 +9,13 @@
     "noEmit": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "types": ["vite/client", "node"]
+    "types": ["vite/client", "node", "chrome"]
   },
-  "include": ["src", "tests", "vite.config.ts", "playwright.config.ts"]
+  "include": [
+    "src",
+    "extension",
+    "tests",
+    "vite.config.ts",
+    "playwright.config.ts"
+  ]
 }
