@@ -85,15 +85,28 @@ export function imageUrl(
 
 /** Prefers a candidate around one reader width; huge originals only slow the image pause. */
 function srcsetCandidate(srcset: string): string {
-  const candidates = srcset
-    // Only a comma followed by whitespace separates candidates; URLs may contain commas.
-    .split(/,\s+/)
-    .map((entry) => entry.trim().split(/\s+/))
-    .filter(([url]) => url)
-    .map(([url, descriptor = ""]) => ({
+  // As in the HTML parsing rules: a URL runs to the next whitespace and may
+  // contain commas; a comma ends a candidate only at the end of the URL or
+  // after its descriptor, with or without a following space.
+  const candidates: { url: string; width: number }[] = [];
+  let rest = srcset;
+  for (;;) {
+    rest = rest.replace(/^[\s,]+/, "");
+    let url = /^\S+/.exec(rest)?.[0];
+    if (!url) break;
+    rest = rest.slice(url.length);
+    let descriptor = "";
+    if (url.endsWith(",")) url = url.replace(/,+$/, "");
+    else {
+      const end = rest.indexOf(",");
+      descriptor = (end < 0 ? rest : rest.slice(0, end)).trim();
+      rest = end < 0 ? "" : rest.slice(end + 1);
+    }
+    candidates.push({
       url,
       width: descriptor.endsWith("w") ? parseInt(descriptor, 10) : NaN,
-    }));
+    });
+  }
   if (!candidates.length) return "";
   const sized = candidates
     .filter((c) => Number.isFinite(c.width))

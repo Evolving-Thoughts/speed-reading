@@ -57,6 +57,28 @@ it("keeps responsive and relative images and drops tracking pixels and unsafe ad
   ).toEqual(["https://example.com/large.jpg"]);
 });
 
+it("reads srcset candidates with or without a space after the comma, and commas inside URLs", () => {
+  const sources = (srcset: string) => {
+    const result = extractArticle(
+      page(
+        `<article><h1>Titel</h1>${paragraph}<img srcset="${srcset}" alt="Bild">${paragraph}</article>`,
+      ),
+    );
+    return result.ok
+      ? result.article.blocks.flatMap((b) =>
+          b.type === "image" ? [b.src] : [],
+        )
+      : [];
+  };
+  expect(sources("/a.jpg 400w,/b.jpg 1200w,/c.jpg 4000w")).toEqual([
+    "https://example.com/b.jpg",
+  ]);
+  expect(
+    sources("/w_400,c_fill/a.jpg 400w, /w_1200,c_fill/b.jpg 1200w"),
+  ).toEqual(["https://example.com/w_1200,c_fill/b.jpg"]);
+  expect(sources("/a.jpg, /b.jpg 2x")).toEqual(["https://example.com/b.jpg"]);
+});
+
 it("reads the whole marked-up article when it is split into sections around an ad", () => {
   const other =
     "Ein anderer Abschnitt führt den Gedanken mit neuen Belegen weiter. ";
