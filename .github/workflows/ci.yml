@@ -19,5 +19,7 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm run build:extension
-      - run: npx playwright install --with-deps chromium
+      # The extra system packages are fonts; when the package mirrors are
+      # unreachable, the browser alone is enough for these tests.
+      - run: npx playwright install --with-deps chromium || npx playwright install chromium
       - run: npm run test:e2e

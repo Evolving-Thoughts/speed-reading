@@ -16,7 +16,11 @@ async function openReader(tab: chrome.tabs.Tab | undefined) {
       files: ["content.js"],
     });
     await chrome.action.setBadgeText({ tabId, text: "" });
-    await chrome.action.setTitle({ tabId, title: "" });
+    // An empty title is not a reset; put the manifest's tooltip back after an error state.
+    await chrome.action.setTitle({
+      tabId,
+      title: chrome.runtime.getManifest().action?.default_title ?? "",
+    });
   } catch {
     // The browser refuses scripts here; say so where the user just clicked.
     await chrome.action.setBadgeBackgroundColor({ tabId, color: "#a36370" });
