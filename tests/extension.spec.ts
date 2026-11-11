@@ -43,7 +43,9 @@ const test = base.extend<{
     const manifest = JSON.parse(readFileSync(`${dir}/manifest.json`, "utf8"));
     manifest.host_permissions = ["<all_urls>"];
     writeFileSync(`${dir}/manifest.json`, JSON.stringify(manifest));
-    const context = await chromium.launchPersistentContext("", {
+    // Each test gets its own browser profile in its output directory.
+    const profile = testInfo.outputPath("profile");
+    const context = await chromium.launchPersistentContext(profile, {
       ...(process.env.CHROMIUM_PATH
         ? { executablePath: process.env.CHROMIUM_PATH }
         : { channel: "chromium" }),
